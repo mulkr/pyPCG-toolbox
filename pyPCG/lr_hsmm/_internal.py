@@ -67,7 +67,7 @@ class LR_HSMM():
         self.hsmm_model = None
         self.lr_model = _LREmission()
     
-    def train_model(self,train_data,train_s1_annot,train_s2_annot):
+    def train_model(self,train_data:np.ndarray,train_s1_annot:np.ndarray,train_s2_annot:np.ndarray) -> None:
         """Trains the model on the specified data with S1 and S2 location annotations 
 
         Args:
@@ -98,7 +98,7 @@ class LR_HSMM():
         self.lr_model = _LREmission(features.T, states)
         self.hsmm_model = HSMMModel(self.lr_model,durs,tmat)
         
-    def segment_single(self,sig):
+    def segment_single(self,sig:np.ndarray) -> tuple[np.ndarray,np.ndarray]:
         """Predicts the states for the given PCG signal
 
         Args:
@@ -113,12 +113,12 @@ class LR_HSMM():
         seg_features = np.array([henv, env, psd, wt])
         if self.hsmm_model is None:
             warnings.warn("Attempting to segment with untrained model. Returning empty states...",RuntimeWarning)
-            return [] , []
+            return np.empty(0), np.empty(0)
         d_states = self.hsmm_model.decode(seg_features.T)
         e_states = _expand_states(d_states+1,self.feature_fs,self.signal_fs,len(sig))
         return e_states, seg_features
         
-    def save_model(self,filename):
+    def save_model(self,filename:str) -> None:
         """Saves the model parameters to a json file
 
         Args:
@@ -145,7 +145,7 @@ class LR_HSMM():
         with open(filename,"w") as save:
             save.write(json.dumps(serialized_hsmm))
             
-    def load_model(self,filename):
+    def load_model(self,filename:str) -> None:
         """Loads the model parameters from a json file
 
         Args:
