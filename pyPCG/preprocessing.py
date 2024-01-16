@@ -4,7 +4,7 @@ import numpy as np
 import pywt
 import copy
 
-def envelope(sig: pcg.pcg_signal) -> np.ndarray:
+def envelope(sig: pcg.pcg_signal) -> pcg.pcg_signal:
     """Calculates the envelope of the signal based on Hilbert transformation
 
     Args:
@@ -13,13 +13,12 @@ def envelope(sig: pcg.pcg_signal) -> np.ndarray:
     Returns:
         np.ndarray: envelope
     """
-    if "env" in sig.features.keys():
-        return sig.features["env"]
-    env = np.abs(signal.hilbert(sig.data)) # type: ignore
-    sig.features["env"] = env
-    return env
+    ret_sig = copy.deepcopy(sig)
+    ret_sig.processing_log.append("Envelope")
+    ret_sig.data = np.abs(signal.hilbert(ret_sig.data)) # type: ignore
+    return ret_sig
 
-def homomorphic(sig: pcg.pcg_signal, filt_ord: int = 6, filt_cutfreq: float = 8) -> np.ndarray:
+def homomorphic(sig: pcg.pcg_signal, filt_ord: int = 6, filt_cutfreq: float = 8) -> pcg.pcg_signal:
     """Calculate the homomoprphic envelope of the signal
 
     Args:
@@ -33,17 +32,17 @@ def homomorphic(sig: pcg.pcg_signal, filt_ord: int = 6, filt_cutfreq: float = 8)
     Returns:
         np.ndarray: homomoprhic envelope
     """
-    if "h_env" in sig.features.keys():
-        return sig.features["h_env"]
-    env = envelope(sig)
     if filt_cutfreq>sig.fs/2:
         raise ValueError("Filter cut frequency exceeds Nyquist limit")
+    
+    ret_sig = copy.deepcopy(sig)
+    env = envelope(sig).data
+    ret_sig.processing_log.append(f"Homomorphic envelope (order-{filt_ord},cut-{filt_cutfreq})")
     lp = signal.butter(filt_ord,filt_cutfreq,output='sos',fs=sig.fs,btype='lowpass')
     env[env<=0] = np.finfo(float).eps
     filt = signal.sosfiltfilt(lp,np.log(env))
-    h_env = np.exp(filt)
-    sig.features["h_env"] = h_env
-    return h_env
+    ret_sig.data = np.exp(filt)
+    return ret_sig
 
 def filter(sig: pcg.pcg_signal, filt_ord: int, filt_cutfreq: float, filt_type: str = "LP") -> pcg.pcg_signal:
     """Filters the signal based on the input parameters
@@ -73,7 +72,7 @@ def filter(sig: pcg.pcg_signal, filt_ord: int, filt_cutfreq: float, filt_type: s
     filt = signal.butter(filt_ord,filt_cutfreq,output='sos',fs=sig.fs,btype=longname)
     ret_sig = copy.deepcopy(sig)
     ret_sig.data = signal.sosfiltfilt(filt,ret_sig.data)
-    ret_sig.features = {}
+    ret_sig.processing_log.append(f"{filt_type} Filter (order-{filt_ord}, cut-{filt_cutfreq})")
     return ret_sig
 
 def wt_denoise(sig: pcg.pcg_signal, th: float=0.2, wt_family: str = "coif4", wt_level: int = 5) -> pcg.pcg_signal:
@@ -94,5 +93,8 @@ def wt_denoise(sig: pcg.pcg_signal, th: float=0.2, wt_family: str = "coif4", wt_
     for coeff in coeffs:
         th_coeffs.append(pywt.threshold(coeff,th*max(coeff)))
     ret_sig.data = pywt.waverec(th_coeffs,wt_family)
-    ret_sig.features = {}
+    ret_sig.processing_log.append(f"Wavelet denoise (family-{wt_family}, level-{wt_level}, th-{th})")
     return ret_sig
+
+if __name__ == '__main__':
+    print("Preprocessing functions")

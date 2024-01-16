@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class pcg_signal:
-    def __init__(self, data=np.array([]), fs=1) -> None:
+    def __init__(self, data=np.array([]), fs=1, log=[]) -> None:
         self.data = data.astype(float)
         self.fs = fs
-        self.features = {}
+        self.processing_log = log
 
     def get_timelength(self) -> float:
         return len(self.data)/self.fs
@@ -33,6 +33,7 @@ def zero_center(sig: pcg_signal) -> pcg_signal:
         pcg_signal: Centered signal
     """
     sig.data -= np.mean(sig.data)
+    sig.processing_log.append("Zero center")
     return sig
 
 def unit_scale(sig: pcg_signal) -> pcg_signal:
@@ -45,6 +46,7 @@ def unit_scale(sig: pcg_signal) -> pcg_signal:
         pcg_signal: Scaled signal
     """
     sig.data /=np.max(np.abs(sig.data))
+    sig.processing_log.append("Unit scale")
     return sig
 
 def std_scale(sig: pcg_signal) -> pcg_signal:
@@ -57,6 +59,7 @@ def std_scale(sig: pcg_signal) -> pcg_signal:
         pcg_signal: Scaled signal
     """
     sig.data /=np.std(sig.data)
+    sig.processing_log.append("Std scale")
     return sig
 
 def normalize(sig: pcg_signal) -> pcg_signal:
@@ -73,10 +76,11 @@ def normalize(sig: pcg_signal) -> pcg_signal:
 def plot(sig: pcg_signal) -> None:
     t = sig.get_timelength()
     plt.plot(np.linspace(0,t,len(sig.data)),sig.data)
-    if "env" in sig.features.keys():
-        plt.plot(np.linspace(0,t,len(sig.data)),sig.features["env"])
-    if "h_env" in sig.features.keys():
-        plt.plot(np.linspace(0,t,len(sig.data)),sig.features["h_env"])
+    
+def multiplot(*args):
+    for sig in args:
+        time = np.linspace(0,sig.get_timelength,len(sig.data))
+        plt.plot(time,sig.data)
 
 if __name__ == '__main__':
     print("Signal container and process pipeline builder")
