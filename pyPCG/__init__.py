@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import copy
 
 class pcg_signal:
     def __init__(self, data=np.array([]), fs=1, log=[]) -> None:
@@ -32,9 +33,10 @@ def zero_center(sig: pcg_signal) -> pcg_signal:
     Returns:
         pcg_signal: Centered signal
     """
-    sig.data -= np.mean(sig.data)
-    sig.processing_log.append("Zero center")
-    return sig
+    ret_sig = copy.deepcopy(sig)
+    ret_sig.data -= np.mean(ret_sig.data)
+    ret_sig.processing_log.append("Zero center")
+    return ret_sig
 
 def unit_scale(sig: pcg_signal) -> pcg_signal:
     """Scale signal to [-1,1] interval
@@ -45,9 +47,10 @@ def unit_scale(sig: pcg_signal) -> pcg_signal:
     Returns:
         pcg_signal: Scaled signal
     """
-    sig.data /=np.max(np.abs(sig.data))
-    sig.processing_log.append("Unit scale")
-    return sig
+    ret_sig = copy.deepcopy(sig)
+    ret_sig.data /=np.max(np.abs(ret_sig.data))
+    ret_sig.processing_log.append("Unit scale")
+    return ret_sig
 
 def std_scale(sig: pcg_signal) -> pcg_signal:
     """Scale signal to 1 std
@@ -58,9 +61,10 @@ def std_scale(sig: pcg_signal) -> pcg_signal:
     Returns:
         pcg_signal: Scaled signal
     """
-    sig.data /=np.std(sig.data)
-    sig.processing_log.append("Std scale")
-    return sig
+    ret_sig = copy.deepcopy(sig)
+    ret_sig.data /=np.std(ret_sig.data)
+    ret_sig.processing_log.append("Std scale")
+    return ret_sig
 
 def normalize(sig: pcg_signal) -> pcg_signal:
     """Center to zero and scale signal to [-1,1] interval
