@@ -10,7 +10,7 @@ def read_signal_file(path: str, format: str) -> tuple[np.ndarray,int]:
     Supported file formats:
     - `wav`: wav file
     - `raw`: raw binary (headerless)
-    - `mat`: MATLAB file (WIP)
+    - `mat`: MATLAB file (with two variables: `fs`-samplerate, `sig`-signal data)
     - `FETA`: every second byte is PCG data (headerless)
     - `1k`: 1 kB chunks (!untested!)
 
@@ -76,7 +76,9 @@ def read_signal_file(path: str, format: str) -> tuple[np.ndarray,int]:
         elif format == 'wav':
             fs, signal = sio.wavfile.read(path)
         elif format == 'mat':
-            raise NotImplementedError('Not implemented yet')
+            mat = sio.loadmat(path)
+            fs = mat["fs"][0,0]
+            signal = mat["sig"][0]
         else:
             raise ValueError('Format not recognized')
     return np.array(signal).astype(int), fs
