@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.signal as signal
+import pyPCG.lr_hsmm as hsmm
 
 def adv_peak(sig,percent_th=0.5):
     """Peak detection by local maxima and following drop in value
@@ -33,3 +34,12 @@ def segment_peaks(peak_locs,envelope,start_drop=0.6,end_drop=0.6):
         starts.append(np.nonzero(envelope[prev_peak:peak_loc]<start_th)[0][-1]+prev_peak)
         ends.append(np.nonzero(envelope[peak_loc:next_peak]<end_th)[0][0]+peak_loc)
     return np.array(starts), np.array(ends)
+
+def load_hsmm(path):
+    model = hsmm.LR_HSMM()
+    model.load_model(path)
+    return model
+
+def segment_hsmm(model,signal):
+    states, _ = model.segment_single(signal)
+    return states
