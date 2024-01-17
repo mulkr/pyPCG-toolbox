@@ -111,3 +111,6 @@ def convert_hsmm_states(states: npt.NDArray[np.float_], state_id: int) -> tuple[
     state_start = np.nonzero(states_diff>0)[0]
     state_end = np.nonzero(states_diff<0)[0]
     return state_start, state_end
+
+if __name__ == '__main__':
+    print("Segmenting and peak detection")
