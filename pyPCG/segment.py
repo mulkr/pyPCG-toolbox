@@ -103,3 +103,11 @@ def segment_hsmm(model:hsmm.LR_HSMM,signal:pcg.pcg_signal) -> npt.NDArray[np.flo
         raise ValueError(f"Unexpected signal samplerate {signal.fs}, LR-HSMM expects {model.signal_fs}")
     states, _ = model.segment_single(signal.data)
     return states
+
+def convert_hsmm_states(states: npt.NDArray[np.float_], state_id: int) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.int_]]:
+    select = np.zeros_like(states)
+    select[states==state_id] = 1
+    states_diff = np.diff(select)
+    state_start = np.nonzero(states_diff>0)[0]
+    state_end = np.nonzero(states_diff<0)[0]
+    return state_start, state_end
