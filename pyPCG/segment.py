@@ -1,9 +1,10 @@
 import numpy as np
+import numpy.typing as npt
 import scipy.signal as sgnl
 import pyPCG as pcg
 import pyPCG.lr_hsmm as hsmm
 
-def adv_peak(signal: pcg.pcg_signal, percent_th:float=0.5) -> tuple[np.ndarray,np.ndarray]:
+def adv_peak(signal: pcg.pcg_signal, percent_th:float=0.5) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.int_]]:
     """Adaptive peak detection, based on local maxima and following value drop
 
     Args:
@@ -25,7 +26,7 @@ def adv_peak(signal: pcg.pcg_signal, percent_th:float=0.5) -> tuple[np.ndarray,n
             peaks.append(search_start)
     return np.array(sig[peaks]), np.array(peaks)
 
-def peak_sort_diff(peak_locs: np.ndarray) -> tuple[np.ndarray,np.ndarray]:
+def peak_sort_diff(peak_locs: npt.NDArray[np.int_]) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.int_]]:
     """Sort detected peaks based on time differences.
     A short time difference corresponds with systole -> S1-S2, a long time difference corresponds with diastole -> S2-S1
 
@@ -47,7 +48,7 @@ def peak_sort_diff(peak_locs: np.ndarray) -> tuple[np.ndarray,np.ndarray]:
     s2_loc = peak_locs[interval_diff<0]
     return s1_loc, s2_loc
 
-def segment_peaks(peak_locs: np.ndarray, envelope_signal: pcg.pcg_signal ,start_drop:float=0.6, end_drop:float=0.6) -> tuple[np.ndarray,np.ndarray]:
+def segment_peaks(peak_locs: npt.NDArray[np.int_], envelope_signal: pcg.pcg_signal ,start_drop:float=0.6, end_drop:float=0.6) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.int_]]:
     """Create start and end locations from the detected peaks based on the provided envelope.
     The relative drop in envelope value is marked as the start and end positions of the given heartsound
 
@@ -85,7 +86,7 @@ def load_hsmm(path:str) -> hsmm.LR_HSMM:
     model.load_model(path)
     return model
 
-def segment_hsmm(model:hsmm.LR_HSMM,signal:pcg.pcg_signal) -> np.ndarray:
+def segment_hsmm(model:hsmm.LR_HSMM,signal:pcg.pcg_signal) -> npt.NDArray[np.float_]:
     """Use a trained LR-HSMM model to segment a pcg signal
 
     Args:

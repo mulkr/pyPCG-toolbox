@@ -12,6 +12,7 @@ import pywt
 import json
 import warnings
 import numpy as np
+import numpy.typing as npt
 import scipy.signal as sgn
 from math import ceil
 from sklearn.linear_model import LogisticRegression
@@ -67,7 +68,7 @@ class LR_HSMM():
         self.hsmm_model = None
         self.lr_model = _LREmission()
     
-    def train_model(self,train_data:np.ndarray,train_s1_annot:np.ndarray,train_s2_annot:np.ndarray) -> None:
+    def train_model(self,train_data:npt.NDArray[np.float_],train_s1_annot:(npt.NDArray[np.float_]|npt.NDArray[np.int_]),train_s2_annot:npt.NDArray[np.float_]) -> None:
         """Trains the model on the specified data with S1 and S2 location annotations 
 
         Args:
@@ -98,7 +99,7 @@ class LR_HSMM():
         self.lr_model = _LREmission(features.T, states)
         self.hsmm_model = HSMMModel(self.lr_model,durs,tmat)
         
-    def segment_single(self,sig:np.ndarray) -> tuple[np.ndarray,np.ndarray]:
+    def segment_single(self,sig:npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
         """Predicts the states for the given PCG signal
 
         Args:
@@ -110,7 +111,7 @@ class LR_HSMM():
         """
         
         henv, env, psd, wt = _generate_features(sig,self.signal_fs,self.feature_fs,self.bandpass_frq)
-        seg_features = np.array([henv, env, psd, wt])
+        seg_features = np.array([henv, env, psd, wt], dtype=np.float_)
         if self.hsmm_model is None:
             warnings.warn("Attempting to segment with untrained model. Returning empty states...",RuntimeWarning)
             return np.empty(0), np.empty(0)
