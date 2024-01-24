@@ -11,7 +11,7 @@ def envelope(sig: pcg.pcg_signal) -> pcg.pcg_signal:
         sig (pcg.pcg_signal): input signal
 
     Returns:
-        np.ndarray: envelope
+        pcg.pcg_signal: envelope
     """
     ret_sig = copy.deepcopy(sig)
     ret_sig.processing_log.append("Envelope")
@@ -30,7 +30,7 @@ def homomorphic(sig: pcg.pcg_signal, filt_ord: int = 6, filt_cutfreq: float = 8)
         ValueError: The cutoff frequency exceeds the Nyquist limit
 
     Returns:
-        np.ndarray: homomoprhic envelope
+        pcg.pcg_signal: homomoprhic envelope
     """
     if filt_cutfreq>sig.fs/2:
         raise ValueError("Filter cut frequency exceeds Nyquist limit")
