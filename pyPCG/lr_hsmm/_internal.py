@@ -432,8 +432,8 @@ def _diff(sig):
     return sig[1:]
 
 def _expand_states(states,orig_fs,new_fs,new_len):
-    expanded = np.zeros((new_len,1))
-    changes = np.nonzero(_diff(states))[0]
+    expanded = np.zeros(new_len)
+    changes = np.nonzero(np.diff(states))[0]
     changes = np.append(changes,len(states)-1)
     start = 0
     for end in changes:
