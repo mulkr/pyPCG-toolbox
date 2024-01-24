@@ -14,38 +14,39 @@ def _check_start_end(start,end):
             end = end[:len(start)]
     return start, end
 
-def time_delta(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_]) -> npt.NDArray[np.int_]:
+def time_delta(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_], sig: pcg.pcg_signal) -> npt.NDArray[np.float_]:
     start, end = _check_start_end(start,end)
-    return end-start
+    return (end-start)/sig.fs
 
-def ramp_time(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal,type: str="onset") -> npt.NDArray[np.int_]:
+def ramp_time(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal,type: str="onset") -> npt.NDArray[np.float_]:
     start, end = _check_start_end(start,end)
-    peak = np.argmax(envelope.data[start:end])
-    ret = np.array([])
-    if type=="onset":
-        ret = peak-start
-    elif type=="exit":
-        ret = end-peak
-    else:
-        raise ValueError("Unrecognized ramp type")
-    return ret
+    ret = []
+    for s,e in zip(start,end):
+        peak = np.argmax(envelope.data[s:e])
+        l = e-s
+        if type=="onset":
+            ret.append(peak)
+        elif type=="exit":
+            ret.append(l-peak)
+        else:
+            raise ValueError("Unrecognized ramp type")
+    return np.array(ret)/envelope.fs
 
 def zero_cross_rate(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal) -> npt.NDArray[np.float_]:
     start, end = _check_start_end(start,end)
     ret = []
     for s, e in zip(start,end):
         crosses = len(np.nonzero(np.diff(sig.data[s:e] > 0))[0])
-        ret.append(crosses/e-s)
+        ret.append(crosses/(e-s))
     return np.array(ret)
     
 
 def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal,factor: float=0.7) -> npt.NDArray[np.int_]:
     start, end = _check_start_end(start,end)
-    sums = np.sum(envelope.data[start:end],axis=1)
     ret = []
-    for summ, s, e in zip(sums, start, end):
-        th = summ*factor
+    for s, e in zip(start, end):
         win = envelope.data[s:e]
+        th = np.sum(win)*factor
         vals = np.sort(win*-1)*-1
         for val in vals:
             filt = win>val
@@ -61,7 +62,7 @@ def peak_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope
     power = envelope.data**2
     loc, val = [], []
     for s, e in zip(start,end):
-        win = power[s,e]
+        win = power[s:e]
         th = np.sum(win)*0.5 #type: ignore
         centr = np.nonzero(np.cumsum(win)>th)[0][0]
         loc.append(centr)
@@ -70,26 +71,28 @@ def peak_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope
 
 def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
     start, end = _check_start_end(start,end)
-    spect = abs(fft.fft(sig.data[start:end],n=nfft)) #type: ignore
-    spect = spect[:,:nfft//2]
     freqs = np.linspace(0,sig.fs//2,nfft//2)
-    return freqs[np.argmax(spect,axis=1)], np.max(spect,axis=1)
+    loc, val = [],[]
+    for s,e in zip(start,end):
+        spect = abs(fft.fft(sig.data[s:e],n=nfft)) #type: ignore
+        spect = spect[:nfft//2]
+        loc.append(freqs[np.argmax(spect)])
+        val.append(np.max(spect))
+    return np.array(loc), np.array(val) 
     
 
 def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, factor: float=0.7, nfft: int=512):
     start, end = _check_start_end(start,end)
-    spect = abs(fft.fft(sig.data[start:end],n=nfft)) #type: ignore
-    spect = spect[:,:nfft//2]
-    power = spect**2
-    sums = np.sum(power[start:end],axis=1)
     ret = []
-    for summ, s, e in zip(sums, start, end):
-        th = summ*factor
-        win = power[s:e]
-        vals = np.sort(win*-1)*-1
+    for s, e in zip(start, end):
+        spect = abs(fft.fft(sig.data[s:e],n=nfft)) #type: ignore
+        spect = spect[:nfft//2]
+        power = spect**2
+        th = np.sum(power)*factor
+        vals = np.sort(power*-1)*-1
         for val in vals:
-            filt = win>val
-            if np.sum(win[filt])>=th:
+            filt = power>val
+            if np.sum(power[filt])>=th:
                 idx = np.nonzero(filt)[0]
                 ret.append(idx[-1]-idx[0])
                 break
@@ -97,12 +100,16 @@ def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pc
 
 def spectral_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
     start, end = _check_start_end(start,end)
-    spect = abs(fft.fft(sig.data[start:end],n=nfft)) #type: ignore
-    spect = spect[:,:nfft//2]
     freqs = np.linspace(0,sig.fs//2,nfft//2)
-    th = np.sum(spect,axis=1)*0.5
-    locs = np.nonzero(np.cumsum(spect,axis=1)>th)[0][:,0] #? Nem tudom hogy jó-e lol
-    return freqs[locs], spect[locs]
+    loc, val = [],[]
+    for s,e in zip(start,end):
+        spect = abs(fft.fft(sig.data[s:e],n=nfft)) #type: ignore
+        spect = spect[:nfft//2]
+        th = np.sum(spect)*0.5
+        idx = np.nonzero(np.cumsum(spect)>th)[0][0]
+        loc.append(freqs[idx])
+        val.append(spect[idx])
+    return np.array(loc), np.array(val)
     
 
 def cwt(start,end,sig):
