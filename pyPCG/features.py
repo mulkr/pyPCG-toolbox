@@ -15,10 +15,34 @@ def _check_start_end(start,end):
     return start, end
 
 def time_delta(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_], sig: pcg.pcg_signal) -> npt.NDArray[np.float_]:
+    """Calculate time differences between pairs of points
+
+    Args:
+        start (np.ndarray): start points in samples
+        end (np.ndarray): end points in samples
+        sig (pcg.pcg_signal): input signal
+
+    Returns:
+        np.ndarray: time differences in seconds
+    """
     start, end = _check_start_end(start,end)
     return (end-start)/sig.fs
 
 def ramp_time(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal,type: str="onset") -> npt.NDArray[np.float_]:
+    """Calculate ramp time (onset or exit), the time difference between the boundary and peak
+
+    Args:
+        start (np.ndarray): start points in samples
+        end (np.ndarray): end points in samples
+        envelope (pcg.pcg_signal): precalculated envelope signal
+        type (str, optional): ramp type "onset" or "exit". Defaults to "onset".
+
+    Raises:
+        ValueError: ramp type not "onset" or "exit"
+
+    Returns:
+        np.ndarray: ramp times in seconds
+    """
     start, end = _check_start_end(start,end)
     ret = []
     for s,e in zip(start,end):
@@ -33,6 +57,16 @@ def ramp_time(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pc
     return np.array(ret)/envelope.fs
 
 def zero_cross_rate(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal) -> npt.NDArray[np.float_]:
+    """Calculate zero cross rate
+
+    Args:
+        start (np.ndarray): start times in samples
+        end (np.ndarray): end times in samples
+        sig (pcg.pcg_signal): input signal
+
+    Returns:
+        np.ndarray: zero cross rates
+    """
     start, end = _check_start_end(start,end)
     ret = []
     for s, e in zip(start,end):
@@ -42,6 +76,17 @@ def zero_cross_rate(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: p
     
 
 def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal,factor: float=0.7) -> npt.NDArray[np.int_]:
+    """Calculate peak width, the amount of area under the peak with a given percentage of the total and time differences between the beginning and end
+
+    Args:
+        start (np.ndarray): start times in samples
+        end (np.ndarray): end times in samples
+        envelope (pcg.pcg_signal): input envelope signal
+        factor (float, optional): percentage of total area. Defaults to 0.7.
+
+    Returns:
+        np.ndarray: time difference between the beginning and end of the percentage area
+    """
     start, end = _check_start_end(start,end)
     ret = []
     for s, e in zip(start, end):
@@ -58,6 +103,17 @@ def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: p
     
     
 def peak_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.float_]]:
+    """Calculate centroid (center of mass) of the envelope
+
+    Args:
+        start (np.ndarray): start times in samples
+        end (np.ndarray): end times in samples
+        envelope (pcg.pcg_signal): input envelope signal
+
+    Returns:
+        np.ndarray: time delays from start to centroid
+        np.ndarray: envelope values at centroid
+    """
     start, end = _check_start_end(start,end)
     power = envelope.data**2
     loc, val = [], []
@@ -70,6 +126,18 @@ def peak_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope
     return np.array(loc), np.array(val)
 
 def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
+    """Calculate frequency with maximum amplitude of the segment
+
+    Args:
+        start (np.ndarray): start times in samples
+        end (np.ndarray): end times in samples
+        sig (pcg.pcg_signal): input signal
+        nfft (int, optional): fft width parameter. Defaults to 512.
+
+    Returns:
+        np.ndarray: frequencies of the maximum amplitude
+        np.ndarray: values of the maximum amplitude frequency
+    """
     start, end = _check_start_end(start,end)
     freqs = np.linspace(0,sig.fs//2,nfft//2)
     loc, val = [],[]
@@ -81,7 +149,19 @@ def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_
     return np.array(loc), np.array(val) 
     
 
-def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, factor: float=0.7, nfft: int=512):
+def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, factor: float=0.7, nfft: int=512) -> npt.NDArray[np.int_]:
+    """Calculate spectral width of the segments, percentage of the total power of the segment and the frequency difference between the beginning and end of the calculated area
+
+    Args:
+        start (np.ndarray): start times in samples
+        end (np.ndarray): end times in samples
+        sig (pcg.pcg_signal): input signal
+        factor (float, optional): percentage of total power. Defaults to 0.7.
+        nfft (int, optional): fft width parameter. Defaults to 512.
+
+    Returns:
+        np.ndarray: difference of the beginning and end of the given area
+    """
     start, end = _check_start_end(start,end)
     ret = []
     for s, e in zip(start, end):
@@ -99,6 +179,18 @@ def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pc
     return np.array(ret)
 
 def spectral_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
+    """Calculate spectral centroid (center of mass)
+
+    Args:
+        start (np.ndarray): start times in samples
+        end (np.ndarray): end times in samples
+        sig (pcg.pcg_signal): input signal
+        nfft (int, optional): fft width parameter. Defaults to 512.
+
+    Returns:
+        np.ndarray: spectral centroid locations in Hz
+        np.ndarray: spectral centroid values
+    """
     start, end = _check_start_end(start,end)
     freqs = np.linspace(0,sig.fs//2,nfft//2)
     loc, val = [],[]
