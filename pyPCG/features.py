@@ -113,16 +113,16 @@ def spectral_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig:
     
 
 def cwt(start,end,sig):
-    pass
+    raise NotImplementedError("This feature calculation not implemented yet")
 
 def dwt(start,end,sig):
-    pass
+    raise NotImplementedError("This feature calculation not implemented yet")
 
 def katz_fd(start,end,sig):
-    pass
+    raise NotImplementedError("This feature calculation not implemented yet")
 
 def lyapunov(start,end,sig):
-    pass
+    raise NotImplementedError("This feature calculation not implemented yet")
 
 if __name__ == '__main__':
     print("Feature calculation")
