@@ -39,7 +39,6 @@ def zero_cross_rate(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: p
         crosses = len(np.nonzero(np.diff(sig.data[s:e] > 0))[0])
         ret.append(crosses/(e-s))
     return np.array(ret)
-    
 
 def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal,factor: float=0.7) -> npt.NDArray[np.int_]:
     start, end = _check_start_end(start,end)
@@ -55,8 +54,7 @@ def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: p
                 ret.append(idx[-1]-idx[0])
                 break
     return np.array(ret)
-    
-    
+
 def peak_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.float_]]:
     start, end = _check_start_end(start,end)
     power = envelope.data**2
@@ -78,8 +76,7 @@ def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_
         spect = spect[:nfft//2]
         loc.append(freqs[np.argmax(spect)])
         val.append(np.max(spect))
-    return np.array(loc), np.array(val) 
-    
+    return np.array(loc), np.array(val)
 
 def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, factor: float=0.7, nfft: int=512):
     start, end = _check_start_end(start,end)
@@ -110,7 +107,6 @@ def spectral_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig:
         loc.append(freqs[idx])
         val.append(spect[idx])
     return np.array(loc), np.array(val)
-    
 
 def cwt(start,end,sig):
     raise NotImplementedError("This feature calculation not implemented yet")
