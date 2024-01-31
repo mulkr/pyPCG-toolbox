@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 import scipy.stats as sts
+from scipy.special import erfcinv
 from typing import Callable
 
 def trim_transform(data: npt.NDArray[np.float_], trim_precent: float) -> npt.NDArray[np.float_]:
@@ -26,7 +27,8 @@ def outlier_remove_transform(data: npt.NDArray[np.float_], dist: float=3.0) -> n
         np.ndarray: data without outliers
     """
     d = np.abs(data - np.median(data))
-    mdev = np.median(d)
+    c = -1/(np.sqrt(2)*erfcinv(3/2))
+    mdev = c*np.median(d)
     s = d/mdev if mdev else 0.
     return data[s<dist]
 
@@ -119,7 +121,8 @@ def max(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.fl
         np.ndarray | float: maximum value(s)
     """
     s_data = np.sort(data)
-    return s_data[-k-1:-1]
+    select = s_data[-k-1:-1]
+    return select[::-1]
 
 def min(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.float_:
     """Get minimum values from input
@@ -132,7 +135,7 @@ def min(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.fl
         np.ndarray | float: minimum value(s)
     """
     s_data = np.sort(data)
-    return s_data[k-1:k]
+    return s_data[0:k]
 
 def percentile(data: npt.NDArray[np.float_], perc: float=25) -> npt.NDArray[np.float_] | np.float_:
     """Calculate given percentile of inputs
