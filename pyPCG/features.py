@@ -40,7 +40,7 @@ def zero_cross_rate(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: p
         ret.append(crosses/(e-s))
     return np.array(ret)
 
-def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal,factor: float=0.7) -> npt.NDArray[np.int_]:
+def peak_spread(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal,factor: float=0.7) -> npt.NDArray[np.int_]:
     start, end = _check_start_end(start,end)
     ret = []
     for s, e in zip(start, end):
@@ -67,6 +67,18 @@ def peak_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope
         val.append(win[centr])
     return np.array(loc), np.array(val)
 
+def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal,factor: float=0.7) -> npt.NDArray[np.int_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        loc = np.argmax(envelope.data[s:e])+s
+        val = envelope.data[loc]
+        th = val*factor
+        w_s = np.nonzero(envelope.data[:loc]<th)[0][-1]
+        w_e = np.nonzero(envelope.data[loc:]<th)[0][0]+loc
+        ret.append(w_e-w_s)
+    return np.array(ret)
+
 def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
     start, end = _check_start_end(start,end)
     freqs = np.linspace(0,sig.fs//2,nfft//2)
@@ -78,7 +90,7 @@ def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_
         val.append(np.max(spect))
     return np.array(loc), np.array(val)
 
-def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, factor: float=0.7, nfft: int=512):
+def spectral_spread(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, factor: float=0.7, nfft: int=512) -> npt.NDArray[np.int_]:
     start, end = _check_start_end(start,end)
     ret = []
     for s, e in zip(start, end):
@@ -107,6 +119,21 @@ def spectral_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig:
         loc.append(freqs[idx])
         val.append(spect[idx])
     return np.array(loc), np.array(val)
+
+def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, factor: float=0.7, nfft: int=512) -> npt.NDArray[np.int_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s, e in zip(start, end):
+        spect = abs(fft.fft(sig.data[s:e],n=nfft)) #type: ignore
+        spect = spect[:nfft//2]
+        power = spect**2
+        loc = np.argmax(power)
+        val = power[loc]
+        th = val*factor
+        w_s = np.nonzero(power[:loc]<th)[0][-1]
+        w_e = np.nonzero(power[loc:]<th)[0][0]+loc
+        ret.append(w_e-w_s)
+    return np.array(ret)
 
 def cwt(start,end,sig):
     raise NotImplementedError("This feature calculation not implemented yet")
