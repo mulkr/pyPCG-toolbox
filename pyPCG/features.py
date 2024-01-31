@@ -36,7 +36,7 @@ def zero_cross_rate(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: p
     start, end = _check_start_end(start,end)
     ret = []
     for s, e in zip(start,end):
-        crosses = len(np.nonzero(np.diff(sig.data[s:e] > 0))[0])
+        crosses = len(np.nonzero(np.diff(sig.data[s:e] > 0))[0])+0.5
         ret.append(crosses/(e-s))
     return np.array(ret)
 
