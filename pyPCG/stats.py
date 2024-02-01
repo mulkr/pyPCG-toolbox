@@ -108,7 +108,7 @@ def kurt(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
     """
     if len(data.shape) == 1:
         return sts.kurtosis(data).astype(np.float_)
-    else: return sts.kurtosis(data,axis=1).astype(npt.NDArray[np.float_])
+    else: return sts.kurtosis(data,axis=1) #type: ignore
 
 def max(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.float_:
     """Get maximum values from input
