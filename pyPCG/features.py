@@ -4,6 +4,7 @@ import pyPCG as pcg
 import numpy.typing as npt
 import scipy.signal as signal
 import scipy.fft as fft
+import pywt
 
 def _check_start_end(start,end):
     if len(start) != len(end):
@@ -135,8 +136,26 @@ def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pc
         ret.append(w_e-w_s)
     return np.array(ret)
 
-def cwt(start,end,sig):
-    raise NotImplementedError("This feature calculation not implemented yet")
+def spectrum_raw(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,nfft:int=512) -> npt.NDArray[np.float_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        spect = abs(fft.fft(sig.data[s:e],n=nfft)) #type: ignore
+        spect = spect[:nfft//2]
+        ret.append(spect)
+    return np.array(ret)
+
+def max_cwt(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
+    warnings.warn("CWT calculation done with PyWT which has parity problems with Matlab")
+    start, end = _check_start_end(start,end)
+    time,freq = [],[]
+    for s,e in zip(start,end):
+        coef, fr = pywt.cwt(sig.data[s:e],np.arange(1,100),"cmor1.0-1.5",sampling_period=1/sig.fs)
+        coef = np.abs(coef)
+        loc = np.unravel_index(np.argmax(coef),coef.shape)
+        time.append(loc[0])
+        freq.append(fr[loc[1]])
+    return np.array(time),np.array(freq)
 
 def dwt(start,end,sig):
     raise NotImplementedError("This feature calculation not implemented yet")
