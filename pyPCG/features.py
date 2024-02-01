@@ -4,6 +4,7 @@ import pyPCG as pcg
 import numpy.typing as npt
 import scipy.signal as signal
 import scipy.fft as fft
+import pywt
 
 def _check_start_end(start,end):
     if len(start) != len(end):
@@ -70,12 +71,11 @@ def zero_cross_rate(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: p
     start, end = _check_start_end(start,end)
     ret = []
     for s, e in zip(start,end):
-        crosses = len(np.nonzero(np.diff(sig.data[s:e] > 0))[0])
+        crosses = len(np.nonzero(np.diff(sig.data[s:e] > 0))[0])+0.5
         ret.append(crosses/(e-s))
     return np.array(ret)
-    
 
-def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal,factor: float=0.7) -> npt.NDArray[np.int_]:
+def peak_spread(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal,factor: float=0.7) -> npt.NDArray[np.int_]:
     """Calculate peak width, the amount of area under the peak with a given percentage of the total and time differences between the beginning and end
 
     Args:
@@ -100,8 +100,7 @@ def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: p
                 ret.append(idx[-1]-idx[0])
                 break
     return np.array(ret)
-    
-    
+
 def peak_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.float_]]:
     """Calculate centroid (center of mass) of the envelope
 
@@ -125,6 +124,18 @@ def peak_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope
         val.append(win[centr])
     return np.array(loc), np.array(val)
 
+def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg.pcg_signal,factor: float=0.7) -> npt.NDArray[np.int_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        loc = np.argmax(envelope.data[s:e])+s
+        val = envelope.data[loc]
+        th = val*factor
+        w_s = np.nonzero(envelope.data[:loc]<th)[0][-1]
+        w_e = np.nonzero(envelope.data[loc:]<th)[0][0]+loc
+        ret.append(w_e-w_s)
+    return np.array(ret)
+
 def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
     """Calculate frequency with maximum amplitude of the segment
 
@@ -146,10 +157,9 @@ def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_
         spect = spect[:nfft//2]
         loc.append(freqs[np.argmax(spect)])
         val.append(np.max(spect))
-    return np.array(loc), np.array(val) 
-    
+    return np.array(loc), np.array(val)
 
-def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, factor: float=0.7, nfft: int=512) -> npt.NDArray[np.int_]:
+def spectral_spread(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, factor: float=0.7, nfft: int=512) -> npt.NDArray[np.int_] -> npt.NDArray[np.int_]:
     """Calculate spectral width of the segments, percentage of the total power of the segment and the frequency difference between the beginning and end of the calculated area
 
     Args:
@@ -202,10 +212,42 @@ def spectral_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig:
         loc.append(freqs[idx])
         val.append(spect[idx])
     return np.array(loc), np.array(val)
-    
 
-def cwt(start,end,sig):
-    raise NotImplementedError("This feature calculation not implemented yet")
+def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, factor: float=0.7, nfft: int=512) -> npt.NDArray[np.int_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s, e in zip(start, end):
+        spect = abs(fft.fft(sig.data[s:e],n=nfft)) #type: ignore
+        spect = spect[:nfft//2]
+        power = spect**2
+        loc = np.argmax(power)
+        val = power[loc]
+        th = val*factor
+        w_s = np.nonzero(power[:loc]<th)[0][-1]
+        w_e = np.nonzero(power[loc:]<th)[0][0]+loc
+        ret.append(w_e-w_s)
+    return np.array(ret)
+
+def spectrum_raw(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,nfft:int=512) -> npt.NDArray[np.float_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        spect = abs(fft.fft(sig.data[s:e],n=nfft)) #type: ignore
+        spect = spect[:nfft//2]
+        ret.append(spect)
+    return np.array(ret)
+
+def max_cwt(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
+    warnings.warn("CWT calculation done with PyWT which has parity problems with Matlab")
+    start, end = _check_start_end(start,end)
+    time,freq = [],[]
+    for s,e in zip(start,end):
+        coef, fr = pywt.cwt(sig.data[s:e],np.arange(1,100),"cmor1.0-1.5",sampling_period=1/sig.fs)
+        coef = np.abs(coef)
+        loc = np.unravel_index(np.argmax(coef),coef.shape)
+        time.append(loc[0])
+        freq.append(fr[loc[1]])
+    return np.array(time),np.array(freq)
 
 def dwt(start,end,sig):
     raise NotImplementedError("This feature calculation not implemented yet")
