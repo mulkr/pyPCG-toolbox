@@ -1,10 +1,11 @@
 import csv
 import warnings
 import numpy as np
+import numpy.typing as npt
 import scipy.io as sio
 from math import floor
 
-def read_signal_file(path: str, format: str) -> tuple[np.ndarray,int]:
+def read_signal_file(path: str, format: str) -> tuple[npt.NDArray[np.int_],int]:
     """Read in fetal heartsound containing file
     
     Supported file formats:
