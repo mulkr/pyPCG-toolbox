@@ -159,7 +159,7 @@ def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_
         val.append(np.max(spect))
     return np.array(loc), np.array(val)
 
-def spectral_spread(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, factor: float=0.7, nfft: int=512) -> npt.NDArray[np.int_] -> npt.NDArray[np.int_]:
+def spectral_spread(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, factor: float=0.7, nfft: int=512) -> npt.NDArray[np.int_]:
     """Calculate spectral width of the segments, percentage of the total power of the segment and the frequency difference between the beginning and end of the calculated area
 
     Args:
