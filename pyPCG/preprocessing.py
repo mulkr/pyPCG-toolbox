@@ -3,6 +3,7 @@ import scipy.signal as signal
 import numpy as np
 import pywt
 import copy
+import emd
 
 def envelope(sig: pcg.pcg_signal) -> pcg.pcg_signal:
     """Calculates the envelope of the signal based on Hilbert transformation
@@ -111,6 +112,52 @@ def slice_signal(sig: pcg.pcg_signal, time_len: float=60, overlap: float=0):
         acc.append(sliced)
         start += step
     return acc
+
+def emd_denoise_sth(sig: pcg.pcg_signal) -> pcg.pcg_signal:
+    """Boudraa, Abdel-O & Cexus, Jean-Christophe & Saidi, Zazia. (2005). EMD-Based Signal Noise Reduction. Signal Processing. 1."""
+    imf = emd.sift.sift(sig.data)
+    mad = np.median(np.abs(imf - np.median(imf,axis=0)),axis=0) #type: ignore
+    sigma = mad/0.6745
+    # MODIFIED TAU
+    tau = sigma*np.sqrt(2)
+    th_imf = pywt.threshold(imf,tau) #type: ignore
+    ret_sig = copy.deepcopy(sig)
+    ret_sig.data = np.sum(th_imf,axis=1)
+    ret_sig.processing_log.append("EMD denoising (soft th)")
+    return ret_sig
+
+def emd_denoise_savgol(sig: pcg.pcg_signal, window: int=10, poly: int=3) -> pcg.pcg_signal:
+    """Boudraa, Abdel-O & Cexus, Jean-Christophe & Saidi, Zazia. (2005). EMD-Based Signal Noise Reduction. Signal Processing. 1."""
+    imf = emd.sift.sift(sig.data)
+    th_imf = signal.savgol_filter(imf,window,poly,mode="nearest")
+    ret_sig = copy.deepcopy(sig)
+    ret_sig.data = np.sum(th_imf,axis=1)
+    ret_sig.processing_log.append("EMD denoising (savgol)")
+    return ret_sig
+
+def wt_denoise_sth(sig: pcg.pcg_signal, wt_family: str = "coif4", wt_level: int = 5) -> pcg.pcg_signal:
+    """Denoise the signal with automatic wavelet thresholding method
+
+    Args:
+        sig (pcg.pcg_signal): input noisy signal
+        wt_family (str, optional): wavelet family. Defaults to "coif4".
+        wt_level (int, optional): wavelet decomposition level. Defaults to 5.
+
+    Returns:
+        pcg.pcg_signal: denoised signal
+    """
+    ret_sig = copy.deepcopy(sig)
+    th_coeffs = []
+    coeffs = pywt.wavedec(ret_sig.data,wt_family,level=wt_level)
+    for coeff in coeffs:
+        mad = np.median(np.abs(coeff - np.median(coeff))) #type: ignore
+        sigma = mad/0.6745
+        # MODIFIED TAU
+        tau = sigma*np.sqrt(2)
+        th_coeffs.append(pywt.threshold(coeff,tau))
+    ret_sig.data = pywt.waverec(th_coeffs,wt_family)
+    ret_sig.processing_log.append(f"Wavelet denoise (family-{wt_family}, level-{wt_level})")
+    return ret_sig
 
 if __name__ == '__main__':
     print("Preprocessing functions")
