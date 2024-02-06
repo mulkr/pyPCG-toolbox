@@ -96,5 +96,21 @@ def wt_denoise(sig: pcg.pcg_signal, th: float=0.2, wt_family: str = "coif4", wt_
     ret_sig.processing_log.append(f"Wavelet denoise (family-{wt_family}, level-{wt_level}, th-{th})")
     return ret_sig
 
+def slice_signal(sig: pcg.pcg_signal, time_len: float=60, overlap: float=0):
+    time_len_s = round(time_len*sig.fs)
+    step = time_len_s-round(time_len_s*overlap)
+    start = 0
+    acc = []
+    at_end = False
+    while(not at_end):
+        end = start+time_len_s
+        if end >= len(sig.data):
+            end = len(sig.data)
+            at_end = True
+        sliced = pcg.pcg_signal(sig.data[start:end],sig.fs)
+        acc.append(sliced)
+        start += step
+    return acc
+
 if __name__ == '__main__':
     print("Preprocessing functions")
