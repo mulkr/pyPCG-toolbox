@@ -159,5 +159,12 @@ def wt_denoise_sth(sig: pcg.pcg_signal, wt_family: str = "coif4", wt_level: int 
     ret_sig.processing_log.append(f"Wavelet denoise (family-{wt_family}, level-{wt_level})")
     return ret_sig
 
+def resample(sig: pcg.pcg_signal, target_fs:int):
+    ret_sig = copy.deepcopy(sig)
+    ret_sig.data = signal.resample_poly(ret_sig.data,target_fs,ret_sig.fs)
+    ret_sig.fs = target_fs
+    ret_sig.processing_log.append(f"Resample to {target_fs} Hz")
+    return ret_sig
+
 if __name__ == '__main__':
     print("Preprocessing functions")
