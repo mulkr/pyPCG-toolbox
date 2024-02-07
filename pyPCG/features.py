@@ -5,6 +5,7 @@ import numpy.typing as npt
 import scipy.signal as signal
 import scipy.fft as fft
 import pywt
+from typing import Callable, Literal, Any
 
 def _check_start_end(start,end):
     if len(start) != len(end):
@@ -302,6 +303,27 @@ def katz_fd(start,end,sig):
 
 def lyapunov(start,end,sig):
     raise NotImplementedError("This feature calculation not implemented yet")
+
+
+feature_config = tuple[Callable,str,Literal["raw"]|Literal["env"]] | tuple[Callable,str,Literal["raw"]|Literal["env"], dict[str,int|float|str]]
+
+class feature_group:
+    def __init__(self,*configs: feature_config) -> None:
+        self.feature_configs = []
+        for config in configs:
+            self.feature_configs.append(config)
+
+    def run(self, raw_sig: pcg.pcg_signal, env_sig: pcg.pcg_signal, starts: npt.NDArray[np.int_], ends: npt.NDArray[np.int_]):
+        ret_dict = {}
+        for ftr in self.feature_configs:
+            in_sig = raw_sig
+            if ftr[2] == "env":
+                in_sig = env_sig
+            if len(ftr) == 3:
+                ret_dict[ftr[1]] = ftr[0](starts,ends,in_sig)
+            else:
+                ret_dict[ftr[1]] = ftr[0](starts,ends,in_sig,**ftr[3])
+        return ret_dict
 
 if __name__ == '__main__':
     print("Feature calculation")
