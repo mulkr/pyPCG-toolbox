@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import numpy.typing as npt
 import scipy.stats as sts
 from scipy.special import erfcinv
@@ -180,6 +181,25 @@ def window_operator(data: npt.NDArray[np.float_],win_size: int,fun: Callable,ove
 def iqr(data: npt.NDArray[np.float_]) -> np.float_:
     return percentile(data,75)-percentile(data,25) #type: ignore
 
+def calc_group_stats(ftr_dict: dict[str,dict], *configs: tuple[Callable,str]) -> dict[str,list[float]]:
+    cols = {"Segment":[],"Feature":[]}
+    for config in configs:
+        cols[config[1]] = []
+    for seg, ftrs in ftr_dict.items():
+        for ftr,val in ftrs.items():
+            cols["Segment"].append(seg)
+            cols["Feature"].append(ftr)
+            for config in configs:
+                cols[config[1]].append(config[0](val))
+    return cols
+
+def export_stats(filename: str, group_stats: dict[str,list[float]]):
+    df = pd.DataFrame(group_stats)
+    with pd.ExcelWriter(filename) as writer:
+        df.to_excel(writer,"summary",index=False)
+        for segment in df["Segment"].unique():
+            sub = df[df["Segment"]==segment][df.columns.difference(["Segment"])]
+            sub.to_excel(writer,segment,index=False)
 
 if __name__ == '__main__':
     print("Statistics")
