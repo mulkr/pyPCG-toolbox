@@ -107,7 +107,7 @@ def kurt(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
         np.ndarray | float: kurtosis of data, if input is 2D then return the value along of 1st axis
     """
     if len(data.shape) == 1:
-        return sts.kurtosis(data).astype(np.float_)
+        return sts.kurtosis(data) #type: ignore
     else: return sts.kurtosis(data,axis=1) #type: ignore
 
 def max(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.float_:
@@ -122,7 +122,10 @@ def max(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.fl
     """
     s_data = np.sort(data)
     select = s_data[-k-1:-1]
-    return select[::-1]
+    ret = select[::-1]
+    if len(ret)==1:
+        ret=ret[0]
+    return ret
 
 def min(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.float_:
     """Get minimum values from input
@@ -135,7 +138,10 @@ def min(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.fl
         np.ndarray | float: minimum value(s)
     """
     s_data = np.sort(data)
-    return s_data[0:k]
+    ret = s_data[0:k]
+    if len(ret)==1:
+        ret=ret[0]
+    return ret
 
 def percentile(data: npt.NDArray[np.float_], perc: float=25) -> npt.NDArray[np.float_] | np.float_:
     """Calculate given percentile of inputs
