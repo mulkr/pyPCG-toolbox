@@ -177,5 +177,9 @@ def window_operator(data: npt.NDArray[np.float_],win_size: int,fun: Callable,ove
         loc.append(i)
     return np.array(loc), np.array(val)
 
+def iqr(data: npt.NDArray[np.float_]) -> np.float_:
+    return percentile(data,75)-percentile(data,25) #type: ignore
+
+
 if __name__ == '__main__':
     print("Statistics")
