@@ -1,63 +1,64 @@
 import numpy as np
 import pyPCG as pcg
+import math
 import scipy.stats as scistat
+import scipy.fft as fft
 import pyPCG.preprocessing as preproc
-from itertools import combinations
-from math import log
+from scipy.linalg import hankel
+from scipy.spatial.distance import pdist
 
-# SQI definitions from: https://www.hindawi.com/journals/bmri/2021/7565398/
+# SQI definitions, _fast_cfsd, _sample_entropy_fast from: https://www.hindawi.com/journals/bmri/2021/7565398/
 
-
-# https://en.wikipedia.org/wiki/Sample_entropy#Implementation
-def _construct_templates(timeseries_data:list, m:int=2):
-    num_windows = len(timeseries_data) - m + 1
-    return [timeseries_data[x:x+m] for x in range(0, num_windows)]
-
-def _get_matches(templates:list, r:float):
-    return len(list(filter(lambda x: _is_match(x[0], x[1], r), combinations(templates, 2))))
-
-def _is_match(template_1:list, template_2:list, r:float):
-    return all([abs(x - y) < r for (x, y) in zip(template_1, template_2)])
-
-def _sample_entropy(timeseries_data, window_size:int, r:float):
-    B = _get_matches(_construct_templates(timeseries_data, window_size), r)
-    A = _get_matches(_construct_templates(timeseries_data, window_size+1), r)
-    return -log(A/B)
+def _sample_entropy_fast(x, m, r):
+    x = x-np.mean(x)
+    x = x/np.std(x)
+    N = len(x)
+    indm = hankel(np.arange(N-m), np.arange(N-m,N-1))
+    inda = hankel(np.arange(N-m), np.arange(N-m,N))
+    ym = x[indm]
+    ya = x[inda]
+    cheb = pdist(ym, "chebychev")
+    cm = np.sum(cheb<=r)*2/ (ym.shape[0]*(ym.shape[0]-1))
+    cheb = pdist(ya, "chebychev")
+    ca = np.sum(cheb<=r)*2/ (ya.shape[0]*(ya.shape[0]-1))
+    return -math.log(ca/cm)
 
 def _autocorr(x):
     result = np.correlate(x, x, mode='full')
     result = result/np.max(result)
     return result[result.size//2+1:]
 
-def _time_autocorr(x,period):
-    X = np.array(x)
-    X = np.append(X,X[::-1])
-    R_tt = []
-    for i in range(len(x)):
-        ofs = np.arange(0,len(x),period)
-        win = X[i+ofs]
-        R_tt.append(_autocorr(win))
-    return np.array(R_tt)
+def _nextpow2(x):
+    return math.ceil(math.log(x, 2))
 
-def _cfsd(x,period,nfft,fs):
-    R_tt = _time_autocorr(x,period)
-    R_tt = R_tt-np.mean(R_tt)
-    r = np.fft.rfft(R_tt,nfft,axis=0)
-    alfa = np.fft.rfftfreq(nfft,1/fs)
-    end = np.fft.fft(r,nfft,axis=1)
-    return np.sum(np.abs(end),axis=1), alfa
+def _fast_cfsd(sig,f1,f2,k):
+    w = np.exp(-1j*2*np.pi*(f2-f1)/(k*sig.fs))
+    a = np.exp(1j*2*np.pi*f1/sig.fs)
+    x = preproc.envelope(sig).data
+    x = x-np.mean(x)
+    m = len(x)
+    nfft = 2**_nextpow2(m+k-1)
+    kk = np.arange(-m,max(k,m))
+    kk2 = (kk**2)/2
+    ww = w**kk2
+    nn = np.arange(m)
+    aa = a**(-nn)
+    aa = aa*ww[m+nn]
+    y = x * aa
+    fy = fft.fft(y,nfft)
+    fv = fft.fft(1/ww[:k-1+m],nfft)
+    fy = fy * fv #type: ignore
+    g = fft.ifft(fy)
+    g = g[m:m+k-1] * ww[m:m+k-1]
+    return np.abs(g)
 
-def periodicity_score(sig: pcg.pcg_signal, period:int, nfft:int) -> float:
-    gamma,alfa = _cfsd(sig.data,period,nfft,sig.fs)
-    d = np.max(gamma[1:])/np.median(gamma[1:])
-    return d
+def periodicity_score(sig: pcg.pcg_signal, f1:float=0.3, f2:float=2.5, k:int=200) -> float:
+    gamma = _fast_cfsd(sig,f1,f2,k)
+    return np.max(gamma)/np.median(gamma)
 
-def sentropy(sig: pcg.pcg_signal, win:int=2, r:float|None=None) -> float:
+def sentropy(sig: pcg.pcg_signal, win:int=2, r:float=0.2) -> float:
     env = preproc.resample(preproc.envelope(sig),30)
-    if r is None:
-        r = np.std(env.data)*0.2 #type: ignore
-    s = _sample_entropy(env.data,win,r) #type: ignore
-    return s
+    return _sample_entropy_fast(env.data,win,r)
 
 def autocorr_max(sig: pcg.pcg_signal, bpm_min: float=100, bpm_max: float=200) -> float:
     ar = _autocorr(sig.data)
