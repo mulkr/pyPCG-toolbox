@@ -1,11 +1,12 @@
 import warnings
+import nolds
 import numpy as np
 import pyPCG as pcg
 import numpy.typing as npt
 import scipy.signal as signal
 import scipy.fft as fft
 import pywt
-from typing import Callable, Literal, Any
+from typing import Callable, Literal
 
 def _check_start_end(start,end):
     if len(start) != len(end):
@@ -298,11 +299,34 @@ def max_cwt(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_s
 def dwt(start,end,sig):
     raise NotImplementedError("This feature calculation not implemented yet")
 
-def katz_fd(start,end,sig):
-    raise NotImplementedError("This feature calculation not implemented yet")
+def katz_fd(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal) -> npt.NDArray[np.float_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        win = sig.data[s:e]
+        ind = np.arange(len(win)-1)
+        A = np.stack((ind,win[:-1]))
+        B = np.stack((ind+1,win[1:]))
+        dists = np.linalg.norm(B-A,axis=0)
+        ind = np.arange(len(win))
+        A = np.stack((ind,win))
+        first = np.reshape([0,win[0]],(2,1))
+        aux_d = np.linalg.norm(A-first,axis=0)
+        L = np.sum(dists)
+        a = np.mean(dists)
+        d = np.max(aux_d)
+        D = np.log10(L/a)/np.log10(d/a)
+        ret.append(D)
+    return np.array(ret)
 
-def lyapunov(start,end,sig):
-    raise NotImplementedError("This feature calculation not implemented yet")
+def lyapunov(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,dim:int=4,lag:int=3) -> npt.NDArray[np.float_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        win = sig.data[s:e]
+        ly = nolds.lyap_r(win,emb_dim=dim,lag=lag,tau=1/sig.fs) #type: ignore
+        ret.append(ly)
+    return np.array(ret)
 
 
 feature_config = tuple[Callable,str,Literal["raw"]|Literal["env"]] | \
