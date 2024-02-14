@@ -296,8 +296,27 @@ def max_cwt(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_s
         freq.append(fr[loc[1]])
     return np.array(time),np.array(freq)
 
-def dwt(start,end,sig):
-    raise NotImplementedError("This feature calculation not implemented yet")
+def dwt_intensity(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2) -> npt.NDArray[np.float_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        win = sig.data[s:e]
+        decomp = pywt.wavedec(win,wt_family,level=decomp_level) #wavedec first, then window?
+        select = decomp[-select_level]
+        intens = np.sqrt(np.sum(select**2))
+        ret.append(intens)
+    return np.array(ret)
+
+def dwt_entropy(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2)  -> npt.NDArray[np.float_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        win = sig.data[s:e]
+        decomp = pywt.wavedec(win,wt_family,level=decomp_level) #wavedec first, then window?
+        select = decomp[-select_level]
+        ent = np.sqrt(-np.sum(select**2*np.log2(select**2)))
+        ret.append(ent)
+    return np.array(ret)
 
 def katz_fd(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal) -> npt.NDArray[np.float_]:
     start, end = _check_start_end(start,end)
