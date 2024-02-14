@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import numpy.typing as npt
 import scipy.stats as sts
 from scipy.special import erfcinv
@@ -107,7 +108,7 @@ def kurt(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
         np.ndarray | float: kurtosis of data, if input is 2D then return the value along of 1st axis
     """
     if len(data.shape) == 1:
-        return sts.kurtosis(data).astype(np.float_)
+        return sts.kurtosis(data) #type: ignore
     else: return sts.kurtosis(data,axis=1) #type: ignore
 
 def max(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.float_:
@@ -122,7 +123,10 @@ def max(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.fl
     """
     s_data = np.sort(data)
     select = s_data[-k-1:-1]
-    return select[::-1]
+    ret = select[::-1]
+    if len(ret)==1:
+        ret=ret[0]
+    return ret
 
 def min(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.float_:
     """Get minimum values from input
@@ -135,7 +139,10 @@ def min(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.fl
         np.ndarray | float: minimum value(s)
     """
     s_data = np.sort(data)
-    return s_data[0:k]
+    ret = s_data[0:k]
+    if len(ret)==1:
+        ret=ret[0]
+    return ret
 
 def percentile(data: npt.NDArray[np.float_], perc: float=25) -> npt.NDArray[np.float_] | np.float_:
     """Calculate given percentile of inputs
@@ -170,6 +177,29 @@ def window_operator(data: npt.NDArray[np.float_],win_size: int,fun: Callable,ove
         val.append(fun(data[i:i+win_size]))
         loc.append(i)
     return np.array(loc), np.array(val)
+
+def iqr(data: npt.NDArray[np.float_]) -> np.float_:
+    return percentile(data,75)-percentile(data,25) #type: ignore
+
+def calc_group_stats(ftr_dict: dict[str,dict], *configs: tuple[Callable,str]) -> dict[str,list[float]]:
+    cols = {"Segment":[],"Feature":[]}
+    for config in configs:
+        cols[config[1]] = []
+    for seg, ftrs in ftr_dict.items():
+        for ftr,val in ftrs.items():
+            cols["Segment"].append(seg)
+            cols["Feature"].append(ftr)
+            for config in configs:
+                cols[config[1]].append(config[0](val))
+    return cols
+
+def export_stats(filename: str, group_stats: dict[str,list[float]]):
+    df = pd.DataFrame(group_stats)
+    with pd.ExcelWriter(filename) as writer:
+        df.to_excel(writer,"summary",index=False)
+        for segment in df["Segment"].unique():
+            sub = df[df["Segment"]==segment][df.columns.difference(["Segment"])]
+            sub.to_excel(writer,segment,index=False)
 
 if __name__ == '__main__':
     print("Statistics")
