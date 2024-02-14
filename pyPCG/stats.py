@@ -196,10 +196,10 @@ def calc_group_stats(ftr_dict: dict[str,dict], *configs: tuple[Callable,str]) ->
 def export_stats(filename: str, group_stats: dict[str,list[float]]):
     df = pd.DataFrame(group_stats)
     with pd.ExcelWriter(filename) as writer:
-        df.to_excel(writer,"summary",index=False)
+        df.to_excel(excel_writer=writer,sheet_name="Summary",index=False)
         for segment in df["Segment"].unique():
-            sub = df[df["Segment"]==segment][df.columns.difference(["Segment"])]
-            sub.to_excel(writer,segment,index=False)
+            sub = df[df["Segment"]==segment][df.columns.difference(["Segment"],sort=False)]
+            sub.to_excel(excel_writer=writer,sheet_name=segment,index=False)
 
 if __name__ == '__main__':
     print("Statistics")
