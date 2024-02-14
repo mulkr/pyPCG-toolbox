@@ -1,10 +1,12 @@
 import warnings
+import nolds
 import numpy as np
 import pyPCG as pcg
 import numpy.typing as npt
 import scipy.signal as signal
 import scipy.fft as fft
 import pywt
+from typing import Callable, Literal
 
 def _check_start_end(start,end):
     if len(start) != len(end):
@@ -294,14 +296,74 @@ def max_cwt(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_s
         freq.append(fr[loc[1]])
     return np.array(time),np.array(freq)
 
-def dwt(start,end,sig):
-    raise NotImplementedError("This feature calculation not implemented yet")
+def dwt_intensity(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2) -> npt.NDArray[np.float_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        win = sig.data[s:e]
+        decomp = pywt.wavedec(win,wt_family,level=decomp_level) #wavedec first, then window?
+        select = decomp[-select_level]
+        intens = np.sqrt(np.sum(select**2))
+        ret.append(intens)
+    return np.array(ret)
 
-def katz_fd(start,end,sig):
-    raise NotImplementedError("This feature calculation not implemented yet")
+def dwt_entropy(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2)  -> npt.NDArray[np.float_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        win = sig.data[s:e]
+        decomp = pywt.wavedec(win,wt_family,level=decomp_level) #wavedec first, then window?
+        select = decomp[-select_level]
+        ent = np.sqrt(-np.sum(select**2*np.log2(select**2)))
+        ret.append(ent)
+    return np.array(ret)
 
-def lyapunov(start,end,sig):
-    raise NotImplementedError("This feature calculation not implemented yet")
+def katz_fd(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal) -> npt.NDArray[np.float_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        win = sig.data[s:e]
+        ind = np.arange(len(win)-1)
+        A = np.stack((ind,win[:-1]))
+        B = np.stack((ind+1,win[1:]))
+        dists = np.linalg.norm(B-A,axis=0)
+        ind = np.arange(len(win))
+        A = np.stack((ind,win))
+        first = np.reshape([0,win[0]],(2,1))
+        aux_d = np.linalg.norm(A-first,axis=0)
+        L = np.sum(dists)
+        a = np.mean(dists)
+        d = np.max(aux_d)
+        D = np.log10(L/a)/np.log10(d/a)
+        ret.append(D)
+    return np.array(ret)
+
+def lyapunov(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,dim:int=4,lag:int=3) -> npt.NDArray[np.float_]:
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        win = sig.data[s:e]
+        ly = nolds.lyap_r(win,emb_dim=dim,lag=lag,tau=1/sig.fs) #type: ignore
+        ret.append(ly)
+    return np.array(ret)
+
+
+feature_config = tuple[Callable,str,Literal["raw"]|Literal["env"]] | \
+                 tuple[Callable,str,Literal["raw"]|Literal["env"], dict[str,int|float|str]]
+
+class feature_group:
+    def __init__(self,*configs: feature_config) -> None:
+        self.feature_configs = []
+        for config in configs:
+            self.feature_configs.append(config)
+
+    def run(self, raw_sig: pcg.pcg_signal, env_sig: pcg.pcg_signal, starts: npt.NDArray[np.int_], ends: npt.NDArray[np.int_]):
+        ret_dict = {}
+        for ftr in self.feature_configs:
+            in_sig = raw_sig if ftr[2] == "raw" else env_sig
+            calc = ftr[0](starts,ends,in_sig) if len(ftr) == 3 else ftr[0](starts,ends,in_sig,**ftr[3])
+            ret_dict[ftr[1]] = calc[0] if type(calc) is tuple else calc
+        return ret_dict
 
 if __name__ == '__main__':
     print("Feature calculation")
