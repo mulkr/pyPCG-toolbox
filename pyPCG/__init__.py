@@ -80,7 +80,8 @@ def normalize(sig: pcg_signal) -> pcg_signal:
 def plot(sig: pcg_signal) -> None:
     t = sig.get_timelength()
     plt.plot(np.linspace(0,t,len(sig.data)),sig.data)
-    
+    plt.title(sig.processing_log[-1])
+
 def multiplot(*args):
     for sig in args:
         time = np.linspace(0,sig.get_timelength,len(sig.data))
