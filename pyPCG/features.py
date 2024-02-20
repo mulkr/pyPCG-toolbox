@@ -3,7 +3,7 @@ import nolds
 import numpy as np
 import pyPCG as pcg
 import numpy.typing as npt
-import scipy.signal as signal
+import scipy.ndimage as ndimage
 import scipy.fft as fft
 import pywt
 from typing import Callable, Literal
@@ -295,6 +295,25 @@ def max_cwt(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_s
         time.append(loc[0])
         freq.append(fr[loc[1]])
     return np.array(time),np.array(freq)
+
+def cwt_peakdist(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal, size:int=8) -> npt.NDArray[np.float_]:
+    warnings.warn("CWT calculation done with PyWT which has parity problems with Matlab")
+    start, end = _check_start_end(start,end)
+    ret = []
+    for s,e in zip(start,end):
+        coef, fr = pywt.cwt(sig.data[s:e],np.arange(1,40),"cmor1.0-1.5",sampling_period=1/sig.fs)
+        coef = np.abs(coef)
+        ind = ndimage.maximum_filter(coef,size)==coef
+        val = coef[ind]
+        asc = np.argsort(val)[::-1]
+        x,y = np.nonzero(ind)
+        max_x = x[asc[:2]]
+        max_y = y[asc[:2]]
+        if len(max_x)<2 or len(max_y)<2:
+            ret.append(0)
+        else:
+            ret.append(np.sqrt((max_x[0]-max_x[1])**2+(max_y[0]-max_y[1])**2))
+    return np.array(ret)
 
 def dwt_intensity(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2) -> npt.NDArray[np.float_]:
     start, end = _check_start_end(start,end)
