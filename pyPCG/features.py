@@ -299,22 +299,24 @@ def max_cwt(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_s
 def dwt_intensity(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2) -> npt.NDArray[np.float_]:
     start, end = _check_start_end(start,end)
     ret = []
+    decomp = pywt.wavedec(sig.data,wt_family,level=decomp_level)
+    select = decomp[-select_level]
+    scale = 2**select_level
     for s,e in zip(start,end):
-        win = sig.data[s:e]
-        decomp = pywt.wavedec(win,wt_family,level=decomp_level) #wavedec first, then window?
-        select = decomp[-select_level]
-        intens = np.sqrt(np.sum(select**2))
+        win = select[s//scale:e//scale]
+        intens = np.sqrt(np.sum(win**2))
         ret.append(intens)
     return np.array(ret)
 
 def dwt_entropy(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2)  -> npt.NDArray[np.float_]:
     start, end = _check_start_end(start,end)
     ret = []
+    decomp = pywt.wavedec(sig.data,wt_family,level=decomp_level) #wavedec first, then window?
+    select = decomp[-select_level]
+    scale = 2**select_level
     for s,e in zip(start,end):
-        win = sig.data[s:e]
-        decomp = pywt.wavedec(win,wt_family,level=decomp_level) #wavedec first, then window?
-        select = decomp[-select_level]
-        ent = np.sqrt(-np.sum(select**2*np.log2(select**2)))
+        win = select[s//scale:e//scale]
+        ent = np.sqrt(-np.sum(win**2*np.log2(win**2)))
         ret.append(ent)
     return np.array(ret)
 
