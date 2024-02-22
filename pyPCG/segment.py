@@ -69,8 +69,11 @@ def segment_peaks(peak_locs: npt.NDArray[np.int_], envelope_signal: pcg.pcg_sign
         next_peak = peak_locs[peak_ind+1] if peak_ind+1<len(peak_locs) else len(envelope)
         start_th = envelope[peak_loc]*start_drop
         end_th = envelope[peak_loc]*end_drop
-        starts.append(np.nonzero(envelope[prev_peak:peak_loc]<start_th)[0][-1]+prev_peak)
-        ends.append(np.nonzero(envelope[peak_loc:next_peak]<end_th)[0][0]+peak_loc)
+        prev_drop = np.nonzero(envelope[prev_peak:peak_loc]<start_th)[0]
+        next_drop = np.nonzero(envelope[peak_loc:next_peak]<end_th)[0]
+        if len(prev_drop)!=0 and len(next_drop)!=0:
+            starts.append(prev_drop[-1]+prev_peak)
+            ends.append(next_drop[0]+peak_loc)
     return np.array(starts), np.array(ends)
 
 def load_hsmm(path:str) -> hsmm.LR_HSMM:
