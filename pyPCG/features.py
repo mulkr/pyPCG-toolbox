@@ -144,8 +144,10 @@ def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: p
         loc = np.argmax(envelope.data[s:e])+s
         val = envelope.data[loc]
         th = val*factor
-        w_s = np.nonzero(envelope.data[:loc]<th)[0][-1]
-        w_e = np.nonzero(envelope.data[loc:]<th)[0][0]+loc
+        w_prev = np.nonzero(envelope.data[:loc]<th)[0]
+        w_next = np.nonzero(envelope.data[loc:]<th)[0]
+        w_s = w_prev[-1] if len(w_prev)!=0 else 0
+        w_e = w_next[0]+loc if len(w_next)!=0 else e-s
         ret.append(w_e-w_s)
     return np.array(ret)
 
@@ -248,8 +250,10 @@ def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pc
         loc = np.argmax(power)
         val = power[loc]
         th = val*factor
-        w_s = np.nonzero(power[:loc]<th)[0][-1]
-        w_e = np.nonzero(power[loc:]<th)[0][0]+loc
+        w_prev = np.nonzero(power[:loc]<th)[0]
+        w_next = np.nonzero(power[loc:]<th)[0]
+        w_s = w_prev[-1] if len(w_prev)!=0 else 0
+        w_e = w_next[0]+loc if len(w_next)!=0 else len(power)
         ret.append(w_e-w_s)
     return np.array(ret)
 
