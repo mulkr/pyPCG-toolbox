@@ -190,6 +190,21 @@ def iqr(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
     return percentile(data,75)-percentile(data,25)
 
 class stats_group:
+    """Group statistic calculations together for reuse
+    
+    Attributes:
+    ----------
+        configs (list[tuple[Callable,str]]): List of statistic calculations with names
+        signal_stats (dict[str, dict[str, list[float]]]): Signal statistics by segment
+        dataframe (pd.DataFrame): Pandas dataframe container of statistics for utility
+    
+    Methods:
+    -------
+        run(ftr_dict): Run the statistic calculations based on the elements of configs
+        add_stat(segment, stats): add calculated statistics to signal_stats with the given segment name
+        calc_group_stats(total_ftr_dict): calculate all stats on all given features and segments (feature_dict named by segment)
+        export(filename): Export statistics to excel file
+    """
     def __init__(self,*stats: tuple[Callable,str]) -> None:
         self.configs = []
         self.signal_stats = {}
@@ -212,6 +227,14 @@ class stats_group:
         self.dataframe = pd.DataFrame(temp)
 
     def run(self,ftr_dict: dict[str,npt.NDArray[np.float_]]) -> dict[str,list[float]]:
+        """Run the statistic calculation based on configuration
+
+        Args:
+            ftr_dict (dict[str,np.ndarray]): feature dictionary, same format as the output of feature_group.run
+
+        Returns:
+            dict[str,list[float]]: Calculated statistics, named
+        """
         ret = {"Feature":[]}
         for stat in self.configs:
             ret[stat[1]] = []
@@ -222,14 +245,30 @@ class stats_group:
         return ret
     
     def add_stat(self,segment:str, stats:dict[str,list[float]]):
+        """Add calculated statistics to signal_stats with the given segment name
+
+        Args:
+            segment (str): segment name to save to
+            stats (dict[str,list[float]]): calculated statistics
+        """
         self.signal_stats[segment] = stats
         self._update_df()
     
     def calc_group_stats(self,total_ftr_dict: dict[str,dict[str,npt.NDArray[np.float_]]]):
+        """Calculate all stats on all given features and segments
+
+        Args:
+            total_ftr_dict (dict[str,dict[str,np.ndarray]]): Feature dictionaries named by segment
+        """
         for segment,ftr_dict in total_ftr_dict.items():
             self.add_stat(segment,self.run(ftr_dict))
 
     def export(self,filename: str):
+        """Export statistics to excel file
+
+        Args:
+            filename (str): filename to save to
+        """
         with pd.ExcelWriter(filename) as writer:
             self.dataframe.to_excel(excel_writer=writer,sheet_name="Summary",index=False)
             for segment in self.dataframe["Segment"].unique():
