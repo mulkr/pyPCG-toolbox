@@ -189,6 +189,53 @@ def iqr(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
     """
     return percentile(data,75)-percentile(data,25)
 
+class stats_group:
+    def __init__(self,*stats: tuple[Callable,str]) -> None:
+        self.configs = []
+        self.signal_stats = {}
+        self.dataframe = pd.DataFrame()
+        for stat in stats:
+            self.configs.append(stat)
+
+    def _update_df(self):
+        first_key = next(iter(self.signal_stats.keys()))
+        ftr_and_stats = list(self.signal_stats[first_key].keys())
+        temp = {"Segment":[]}
+        for key in ftr_and_stats:
+            temp[key] = []
+        for segment,dat in self.signal_stats.items():
+            for key,vals in dat.items():
+                for val in vals:
+                    temp[key].append(val)
+            for _ in dat["Feature"]:
+                temp["Segment"].append(segment)
+        self.dataframe = pd.DataFrame(temp)
+
+    def run(self,ftr_dict: dict[str,npt.NDArray[np.float_]]) -> dict[str,list[float]]:
+        ret = {"Feature":[]}
+        for stat in self.configs:
+            ret[stat[1]] = []
+        for name,value in ftr_dict.items():
+            ret["Feature"].append(name)
+            for stat in self.configs:
+                ret[stat[1]].append(stat[0](value))
+        return ret
+    
+    def add_stat(self,segment:str, stats:dict[str,list[float]]):
+        self.signal_stats[segment] = stats
+        self._update_df()
+    
+    def calc_group_stats(self,total_ftr_dict: dict[str,dict[str,npt.NDArray[np.float_]]]):
+        for segment,ftr_dict in total_ftr_dict.items():
+            self.add_stat(segment,self.run(ftr_dict))
+
+    def export(self,filename: str):
+        with pd.ExcelWriter(filename) as writer:
+            self.dataframe.to_excel(excel_writer=writer,sheet_name="Summary",index=False)
+            for segment in self.dataframe["Segment"].unique():
+                sub = self.dataframe[self.dataframe["Segment"]==segment][self.dataframe.columns.difference(["Segment"],sort=False)]
+                sub.to_excel(excel_writer=writer,sheet_name=segment,index=False)
+
 #TODO: Extract this to class?
 def calc_group_stats(ftr_dict: dict[str,dict[str,npt.NDArray[np.float_]]], *configs: tuple[Callable,str]) -> dict[str,list[float]]:
     """Calculate the same statistics for different segments and their features
