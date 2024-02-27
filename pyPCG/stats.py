@@ -178,10 +178,27 @@ def window_operator(data: npt.NDArray[np.float_],win_size: int,fun: Callable,ove
         loc.append(i)
     return np.array(loc), np.array(val)
 
-def iqr(data: npt.NDArray[np.float_]) -> np.float_:
-    return percentile(data,75)-percentile(data,25) #type: ignore
+def iqr(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
+    """Calculate interquartile range
 
-def calc_group_stats(ftr_dict: dict[str,dict], *configs: tuple[Callable,str]) -> dict[str,list[float]]:
+    Args:
+        data (np.ndarray): input data
+
+    Returns:
+        np.ndarray | float: interquartile range of data
+    """
+    return percentile(data,75)-percentile(data,25)
+
+#TODO: Extract this to class?
+def calc_group_stats(ftr_dict: dict[str,dict[str,npt.NDArray[np.float_]]], *configs: tuple[Callable,str]) -> dict[str,list[float]]:
+    """Calculate the same statistics for different segments and their features
+
+    Args:
+        ftr_dict (dict[str,dict[str,np.ndarray]]): input segment features, <segment name>:<feature dict from featuregroup.run>
+
+    Returns:
+        dict[str,list[float]]: statistics for each segment and its features
+    """
     cols = {"Segment":[],"Feature":[]}
     for config in configs:
         cols[config[1]] = []
@@ -193,7 +210,14 @@ def calc_group_stats(ftr_dict: dict[str,dict], *configs: tuple[Callable,str]) ->
                 cols[config[1]].append(config[0](val))
     return cols
 
+#TODO: Extract this to class?
 def export_stats(filename: str, group_stats: dict[str,list[float]]):
+    """Export statistics calculated with calc_group_stats to excel
+
+    Args:
+        filename (str): name of excel file
+        group_stats (dict[str,list[float]]): input statistics
+    """
     df = pd.DataFrame(group_stats)
     with pd.ExcelWriter(filename) as writer:
         df.to_excel(excel_writer=writer,sheet_name="Summary",index=False)

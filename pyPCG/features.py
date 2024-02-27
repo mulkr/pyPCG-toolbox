@@ -301,6 +301,19 @@ def max_cwt(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_s
     return np.array(time),np.array(freq)
 
 def dwt_intensity(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2) -> npt.NDArray[np.float_]:
+    """Calculate the 'intensity' of discrete wavelet transform
+
+    Args:
+        start (np.ndarray): start times in samples
+        end (np.ndarray): end times in samples
+        sig (pcg.pcg_signal): input signal
+        wt_family (str, optional): wavelet family to use for decomposition. Defaults to "db6".
+        decomp_level (int, optional): wavelet decomposition level. Defaults to 4.
+        select_level (int, optional): selected decomposition level. Defaults to 2.
+
+    Returns:
+        np.ndarray: intensities of selected wavelet detail
+    """
     start, end = _check_start_end(start,end)
     ret = []
     for s,e in zip(start,end):
@@ -312,6 +325,19 @@ def dwt_intensity(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg
     return np.array(ret)
 
 def dwt_entropy(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2)  -> npt.NDArray[np.float_]:
+    """Calculate Shannon entropy of selected discrete wavelet decomposition level
+
+    Args:
+        start (np.ndarray): start times in samples
+        end (np.ndarray): end times in samples
+        sig (pcg.pcg_signal): input signal
+        wt_family (str, optional): wavelet family to use for decomposition. Defaults to "db6".
+        decomp_level (int, optional): wavelet decomposition level. Defaults to 4.
+        select_level (int, optional): selected decomposition level. Defaults to 2.
+
+    Returns:
+        np.ndarray: entropies of selected wavelet detail
+    """
     start, end = _check_start_end(start,end)
     ret = []
     for s,e in zip(start,end):
@@ -323,6 +349,16 @@ def dwt_entropy(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.p
     return np.array(ret)
 
 def katz_fd(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal) -> npt.NDArray[np.float_]:
+    """Calculate Katz fractal dimension
+
+    Args:
+        start (np.ndarray): start times in samples
+        end (np.ndarray): end times in samples
+        sig (pcg.pcg_signal): input signal
+
+    Returns:
+        np.ndarray: Katz fractal dimension estimates
+    """
     start, end = _check_start_end(start,end)
     ret = []
     for s,e in zip(start,end):
@@ -343,6 +379,19 @@ def katz_fd(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_s
     return np.array(ret)
 
 def lyapunov(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg.pcg_signal,dim:int=4,lag:int=3) -> npt.NDArray[np.float_]:
+    """Estimate Lyapunov exponent with nolds
+    Note: this currently has parity problems with Matlab's lyapunovExponent function
+
+    Args:
+        start (np.ndarray): start times in samples
+        end (np.ndarray): end times in samples
+        sig (pcg.pcg_signal): input signal
+        dim (int, optional): Lyapunov embedding dimension. Defaults to 4.
+        lag (int, optional): time-lag (tau) [samples]. Defaults to 3.
+
+    Returns:
+        np.ndarray: estimated Lyapunov exponents
+    """
     start, end = _check_start_end(start,end)
     ret = []
     for s,e in zip(start,end):
@@ -356,12 +405,33 @@ feature_config = tuple[Callable,str,Literal["raw"]|Literal["env"]] | \
                  tuple[Callable,str,Literal["raw"]|Literal["env"], dict[str,int|float|str]]
 
 class feature_group:
+    """Group feature calculations together for reuse
+    
+    Attributes:
+    ----------
+        feature_configs (list[feature_config]): List of configurations for feature calculation.
+    
+    Methods:
+    -------
+        run(raw_sig, env_sig, starts, ends): Run the feature calculations based on the elements of feature_configs
+    """
     def __init__(self,*configs: feature_config) -> None:
         self.feature_configs = []
         for config in configs:
             self.feature_configs.append(config)
 
-    def run(self, raw_sig: pcg.pcg_signal, env_sig: pcg.pcg_signal, starts: npt.NDArray[np.int_], ends: npt.NDArray[np.int_]):
+    def run(self, raw_sig: pcg.pcg_signal, env_sig: pcg.pcg_signal, starts: npt.NDArray[np.int_], ends: npt.NDArray[np.int_]) -> dict[str,npt.NDArray[np.float_]]:
+        """Run feature calculations on the input signal based on the elements of feature_configs
+
+        Args:
+            raw_sig (pcg.pcg_signal): input signal
+            env_sig (pcg.pcg_signal): envelope of input signal
+            starts (np.ndarray): start times in samples
+            ends (np.ndarray): end times in samples
+
+        Returns:
+            dict[str,np.ndarray]: calculated features, with the names given in feature_configs
+        """
         ret_dict = {}
         for ftr in self.feature_configs:
             in_sig = raw_sig if ftr[2] == "raw" else env_sig

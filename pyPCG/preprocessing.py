@@ -97,7 +97,17 @@ def wt_denoise(sig: pcg.pcg_signal, th: float=0.2, wt_family: str = "coif4", wt_
     ret_sig.processing_log.append(f"Wavelet denoise (family-{wt_family}, level-{wt_level}, th-{th})")
     return ret_sig
 
-def slice_signal(sig: pcg.pcg_signal, time_len: float=60, overlap: float=0):
+def slice_signal(sig: pcg.pcg_signal, time_len: float=60, overlap: float=0) -> list[pcg.pcg_signal]:
+    """Slice long signal into a list of shorter signals
+
+    Args:
+        sig (pcg.pcg_signal): input long signal
+        time_len (float, optional): desired short timelength [seconds]. Defaults to 60.
+        overlap (float, optional): overlap percentage. Defaults to 0.
+
+    Returns:
+        list[pcg.pcg_signal]: list of shorter signals
+    """
     time_len_s = round(time_len*sig.fs)
     step = time_len_s-round(time_len_s*overlap)
     start = 0
@@ -114,7 +124,15 @@ def slice_signal(sig: pcg.pcg_signal, time_len: float=60, overlap: float=0):
     return acc
 
 def emd_denoise_sth(sig: pcg.pcg_signal) -> pcg.pcg_signal:
-    """Boudraa, Abdel-O & Cexus, Jean-Christophe & Saidi, Zazia. (2005). EMD-Based Signal Noise Reduction. Signal Processing. 1."""
+    """EMD based denoising with soft threshold method. Based on: Boudraa, Abdel-O & Cexus, Jean-Christophe & Saidi, Zazia. (2005). EMD-Based Signal Noise Reduction. Signal Processing. 1.
+    Note: Tau parameter calculation modified
+
+    Args:
+        sig (pcg.pcg_signal): input signal
+
+    Returns:
+        pcg.pcg_signal: denoised signal
+    """
     imf = emd.sift.sift(sig.data)
     mad = np.median(np.abs(imf - np.median(imf,axis=0)),axis=0) #type: ignore
     sigma = mad/0.6745
@@ -127,7 +145,16 @@ def emd_denoise_sth(sig: pcg.pcg_signal) -> pcg.pcg_signal:
     return ret_sig
 
 def emd_denoise_savgol(sig: pcg.pcg_signal, window: int=10, poly: int=3) -> pcg.pcg_signal:
-    """Boudraa, Abdel-O & Cexus, Jean-Christophe & Saidi, Zazia. (2005). EMD-Based Signal Noise Reduction. Signal Processing. 1."""
+    """EMD based denoising method with Savoy-Golatzky filter method. Based on: Boudraa, Abdel-O & Cexus, Jean-Christophe & Saidi, Zazia. (2005). EMD-Based Signal Noise Reduction. Signal Processing. 1.
+
+    Args:
+        sig (pcg.pcg_signal): input signal
+        window (int, optional): savgol filter window size [samples]. Defaults to 10.
+        poly (int, optional): savgol polynomial degree to fit. Defaults to 3.
+
+    Returns:
+        pcg.pcg_signal: denoised signal
+    """
     imf = emd.sift.sift(sig.data)
     th_imf = signal.savgol_filter(imf,window,poly,mode="nearest")
     ret_sig = copy.deepcopy(sig)
@@ -159,7 +186,16 @@ def wt_denoise_sth(sig: pcg.pcg_signal, wt_family: str = "coif4", wt_level: int 
     ret_sig.processing_log.append(f"Wavelet denoise (family-{wt_family}, level-{wt_level})")
     return ret_sig
 
-def resample(sig: pcg.pcg_signal, target_fs:int):
+def resample(sig: pcg.pcg_signal, target_fs:int) -> pcg.pcg_signal:
+    """Resample signal to target samplerate
+
+    Args:
+        sig (pcg.pcg_signal): input signal
+        target_fs (int): target samplerate
+
+    Returns:
+        pcg.pcg_signal: resampled signal
+    """
     ret_sig = copy.deepcopy(sig)
     ret_sig.data = signal.resample_poly(ret_sig.data,target_fs,ret_sig.fs)
     ret_sig.fs = target_fs

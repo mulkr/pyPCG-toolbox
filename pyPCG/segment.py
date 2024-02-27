@@ -108,6 +108,16 @@ def segment_hsmm(model:hsmm.LR_HSMM,signal:pcg.pcg_signal) -> npt.NDArray[np.flo
     return states
 
 def convert_hsmm_states(states: npt.NDArray[np.float_], state_id: int) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.int_]]:
+    """Convert selected LR-HSMM state to start and end times
+
+    Args:
+        states (np.ndarray): output states of LR-HSMM
+        state_id (int): selected state to convert [1-S1, 2-systole, 3-S2, 4-diastole]
+
+    Returns:
+        np.ndarray: state start times in samples
+        np.ndarray: state end times in samples
+    """
     select = np.zeros_like(states)
     select[states==state_id] = 1
     states_diff = np.diff(select)
