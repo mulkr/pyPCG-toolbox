@@ -23,7 +23,7 @@ class pcg_signal:
         self.processing_log = log
         
     def __repr__(self) -> str:
-        return f"PCG signal [{self.fs}] {self.processing_log}"
+        return f"PCG signal [{self.get_timelength()}s {self.fs}Hz] {self.processing_log}"
 
     def get_timelength(self) -> float:
         """Get legth of signal in seconds
@@ -117,12 +117,17 @@ def normalize(sig: pcg_signal) -> pcg_signal:
     Returns:
         pcg_signal: Normalized signal
     """
-    return zero_center(unit_scale(sig))
+    return unit_scale(zero_center(sig))
 
-def plot(sig: pcg_signal) -> None:
+def plot(sig: pcg_signal, zeroline: bool=False) -> None:
     t = sig.get_timelength()
     plt.plot(np.linspace(0,t,len(sig.data)),sig.data)
+    if zeroline:
+        z_line = np.zeros_like(sig.data)
+        plt.plot(np.linspace(0,t,len(sig.data)),z_line,"k:")
     plt.title(sig.processing_log[-1])
+    plt.xlabel("Time (s)")
+    plt.ylabel("PCG (a.u.)")
 
 def multiplot(*args):
     for sig in args:
