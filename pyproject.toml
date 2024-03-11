@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyPCG_toolbox"
+version = "0.1-a"
+authors = [
+  { name="Kristóf Müller", email="muller.kristof@itk.ppke.hu" },
+]
+description = "A PCG processing toolbox"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GPL-3.0-only",
+    "Operating System :: OS Independent",
+]

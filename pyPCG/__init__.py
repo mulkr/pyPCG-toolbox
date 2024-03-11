@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import copy
 from typing import Callable
 
+__version__ = "0.1-a"
+
 class pcg_signal:
     """PCG signal object
     
