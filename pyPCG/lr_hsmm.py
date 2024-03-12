@@ -1,7 +1,5 @@
 """
-# LR-HSMM segmenter
-## Implementation: K. Müller, PPCU-ITK (PhD student) 2023.
-### Correspondance: muller.kristof@itk.ppke.hu
+Logistic Regression - Hidden Semi-Markov Model segmenter
 
 Based on:
 D. B. Springer, L. Tarassenko and G. D. Clifford, "Logistic Regression-HSMM-Based Heart Sound Segmentation," in IEEE Transactions on Biomedical Engineering, vol. 63, no. 4, pp. 822-832, April 2016, doi: 10.1109/TBME.2015.2475278.
@@ -26,7 +24,6 @@ class LR_HSMM():
     Main segmenter object
 
     Attributes:
-    ----------
         signal_fs (int): Sampling frequency of the input signal. Default: 1000 [Hz]
         feature_fs (int): Sampling frequency for feature calculations. Default: 50 [Hz]
         mean_s1_len (float): Average S1 duration. Default: 122 [ms]
@@ -35,26 +32,12 @@ class LR_HSMM():
         std_s2_len (float): Standard deviation of S2 durations. Default: 22 [ms]
         bandpass_frq (tuple[float,float]): Cutoff frequencies for pre-processing band-pass filtering (Butterworth, 4th order). Default: (25,400) [Hz]
         expected_hr_range (tuple[float,float]): Minimum and maximum expected heartrates. Default: (30,120) [bpm]
-        
+
         hsmm_model (hsmmlearn.hsmm.HSMMModel): State predictor model
         lr_model (hsmmlear.emissions.AbstractEmissions): Probability emissions for the HSMM states. Includes a LogisticRegression model for each state
-            
-    Methods:
-    -------
-        train_model(train_data, train_s1_annot, train_s2_annot)
-            Trains the model on the specified data with S1 and S2 location annotations
-        
-        segment_single(sig)
-            Predicts the states for the given PCG signal
-            
-        save_model(filename)
-            Saves the model parameters to a json file
-            
-        load_model(filename)
-            Loads the model parameters from a json file
     """
-    
-    def __init__(self) -> None:        
+
+    def __init__(self) -> None:
         self.signal_fs = 1000
         self.feature_fs = 50
         self.mean_s1_len = 122
@@ -63,19 +46,19 @@ class LR_HSMM():
         self.std_s2_len = 22
         self.bandpass_frq = (25,400)
         self.expected_hr_range = (30,120)
-        
+
         self.hsmm_model = None
         self.lr_model = _LREmission()
-    
+
     def train_model(self,train_data:npt.NDArray[np.float_],train_s1_annot:(npt.NDArray[np.float_]|npt.NDArray[np.int_]),train_s2_annot:npt.NDArray[np.float_]) -> None:
         """Trains the model on the specified data with S1 and S2 location annotations 
 
         Args:
-            train_data (numpy.ndarray): Array of input signals
-            train_s1_annot (numpy.ndarray): Array of S1 annotations for each signal
-            train_s2_annot (numpy.ndarray): Array of S2 annotations for each signal
+            train_data (np.ndarray): Array of input signals
+            train_s1_annot (np.ndarray): Array of S1 annotations for each signal
+            train_s2_annot (np.ndarray): Array of S2 annotations for each signal
         """
-        
+
         tmat = np.array([[0.,1.,0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.],[1.,0.,0.,0.]])
         states = np.array([])
         f_henv, f_env, f_psd, f_wt = np.array([]),np.array([]),np.array([]),np.array([])
@@ -97,18 +80,17 @@ class LR_HSMM():
         print("Training model...")
         self.lr_model = _LREmission(features.T, states)
         self.hsmm_model = HSMMModel(self.lr_model,durs,tmat)
-        
+
     def segment_single(self,sig:npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
         """Predicts the states for the given PCG signal
 
         Args:
-            sig (numpy.ndarray): Input signal to be segmented
+            sig (np.ndarray): Input signal to be segmented
 
         Returns:
-            e_states (numpy.ndarray): Predicted state for each sample
-            seg_features (numpy.ndarray): Calculated features for each sample
+            tuple[np.ndarray,np.ndarray]: Predicted state for each sample and the calculated features
         """
-        
+
         henv, env, psd, wt = _generate_features(sig,self.signal_fs,self.feature_fs,self.bandpass_frq)
         seg_features = np.array([henv, env, psd, wt], dtype=np.float_)
         if self.hsmm_model is None:
@@ -117,7 +99,7 @@ class LR_HSMM():
         d_states = self.hsmm_model.decode(seg_features.T)
         e_states = _expand_states(d_states+1,self.feature_fs,self.signal_fs,len(sig))
         return e_states, seg_features
-        
+
     def save_model(self,filename:str) -> None:
         """Saves the model parameters to a json file
 
@@ -144,20 +126,20 @@ class LR_HSMM():
         serialized_hsmm = {"config":config,"durations":durs,"transition":tmat,"emissions":emissions}
         with open(filename,"w") as save:
             save.write(json.dumps(serialized_hsmm))
-            
+
     def load_model(self,filename:str) -> None:
         """Loads the model parameters from a json file
 
         Args:
             filename (str): Name of file containing model parameters
         """
-        
+
         with open(filename,"r") as load:
             data = json.loads(load.read())
             durs = np.array(data["durations"])
             tmat = np.array(data["transition"])
             config = data["config"]
-            
+
             self.signal_fs = config["sig_fs"]
             self.feature_fs = config["f_fs"]
             self.bandpass_frq = config["preproc_bp"]
@@ -166,14 +148,14 @@ class LR_HSMM():
             self.std_s1_len = config["std_s1"]
             self.std_s2_len = config["std_s2"]
             self.expected_hr_range = (config["min_hr"],config["max_hr"])
-            
+
             emission = _LREmission()
             emission.unserialize(data["emissions"])
             self.lr_model = emission
             self.hsmm_model = HSMMModel(self.lr_model,durs,tmat)
-            
+
 class _LREmission(AbstractEmissions):
-    
+
     def __init__(self, features=None, states=None) -> None:
         self.LRmodel_s1 = LogisticRegression()
         self.LRmodel_s2 = LogisticRegression()
@@ -182,26 +164,26 @@ class _LREmission(AbstractEmissions):
         self.predictors = [self.LRmodel_s1,self.LRmodel_sys,self.LRmodel_s2,self.LRmodel_dia]
         if(features is None or states is None):
             return
-        
+
         s1_train, s2_train, sys_train, dia_train = np.zeros_like(states), np.zeros_like(states), np.zeros_like(states), np.zeros_like(states)
         s1_train[states != 1] = 1
         s2_train[states != 3] = 1
         sys_train[states != 2] = 1
         dia_train[states != 4] = 1
-        
+
         self.LRmodel_s1 = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,s1_train)
         self.LRmodel_s2 = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,s2_train)
         self.LRmodel_sys = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,sys_train)
         self.LRmodel_dia = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,dia_train)
         self.predictors = [self.LRmodel_s1,self.LRmodel_sys,self.LRmodel_s2,self.LRmodel_dia]
-        
+
     def likelihood(self, obs):
         l_s1 = self.LRmodel_s1.predict_proba(obs)[:,0]
         l_s2 = self.LRmodel_s2.predict_proba(obs)[:,0]
         l_sys = self.LRmodel_sys.predict_proba(obs)[:,0]
         l_dia = self.LRmodel_dia.predict_proba(obs)[:,0]
         return np.array([l_s1,l_sys,l_s2,l_dia])
-    
+
     def serialize(self):
         serialized_models = {"lr_s1":None, "lr_sys":None, "lr_s2":None, "lr_dia":None}
         for lr_type,model in zip(serialized_models.keys(),self.predictors):
@@ -257,15 +239,15 @@ def _wt_feature(sig):
         start = len(d)-len(sig)-1//2
         end = start + len(sig)
         detail[i,:] = d[start:end]
-        
+
     d3 = np.abs(detail[2,:])
     return d3
-    
+
 def _normalize(sig):
     m = np.mean(sig)
     s = np.std(sig)
     n_sig = (sig-m)/s
-    return n_sig    
+    return n_sig
 
 def _spike_removal(sig,sig_fs):
     window_s = round(sig_fs/2)
@@ -295,12 +277,12 @@ def _generate_features(sig,sig_fs,f_fs,preproc=(25,400)):
     f_sig = sgn.sosfiltfilt(bpf,sig)
     # rem_sig = _spike_removal(f_sig,sig_fs)
     rem_sig = f_sig
-    
+
     h_env = _normalize(_h_envelope_feature(rem_sig,sig_fs))
     env = _normalize(_envelope_feature(rem_sig))
     psd = _normalize(_psd_feature(rem_sig,sig_fs))
     wt = _normalize(_wt_feature(rem_sig))
-    
+
     d_h_env = sgn.resample_poly(h_env,sig_fs,f_fs)
     d_env = sgn.resample_poly(env,sig_fs,f_fs)
     d_psd = sgn.resample_poly(psd,sig_fs,f_fs)
@@ -329,7 +311,7 @@ def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,st
         s1_ind = min(len(states)-1,lower_s1+s1_ind) #type: ignore
         upper_s1 = min(len(states)-1,ceil(s1_ind+(ms1/2)))
         lower_s1 = max(0,ceil(s1_ind-(ms1/2)))
-        
+
         states[lower_s1:upper_s1] = 1
     for s2 in as2:
         upper_s2 = min(len(states)-1,s2+ms2+ss2)
@@ -337,11 +319,11 @@ def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,st
         search = env[lower_s2:upper_s2]*(1-states[lower_s2:upper_s2])
         s2_ind = np.argmax(search)
         s2_ind = min(len(states)-1,lower_s2+s2_ind) #type: ignore
-        
+
         upper_s2 = min(len(states)-1,ceil(s2_ind+(ms2/2)))
         lower_s2 = max(0,ceil(s2_ind-(ms2/2)))
         states[lower_s2:upper_s2] = 3
-        
+
         s1_labels = np.nonzero(states == 1)[0]
         diffs = s1_labels - s2
         diffs[diffs<0] = INF
@@ -350,8 +332,8 @@ def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,st
             end_pos = len(states)-1
         else:
             end_pos = s1_labels[np.argmin(diffs)]
-        states[ceil(s2_ind+(ms2/2)):end_pos] = states[ceil(s2_ind+(ms2/2)):end_pos]+4
-        
+        states[ceil(s2_ind+(ms2/2)):end_pos] = states[ceil(s2_ind+(ms2/2)):end_pos]+4 #type: ignore
+
     first_definite = np.nonzero(states)[0][0]
     if first_definite > 0:
         if states[first_definite+1] == 1:
@@ -364,7 +346,7 @@ def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,st
             states[last_definite:] = 2
         if states[last_definite] == 3:
             states[last_definite:] = 4
-            
+
     states[states==0] = 2
     return states
 
@@ -387,7 +369,6 @@ def _get_hr_sys(sig,sig_fs,preproc=(25,400),min_hr=30,max_hr=120):
     systole = ind/sig_fs
     # print(systole)
     # systole = 0.1 # temporary hack
-    
     return heartrate, systole
 
 def _get_duration_params(hr,sys,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22):
@@ -397,7 +378,7 @@ def _get_duration_params(hr,sys,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22):
     mean_dia = round(((60/hr)-sys)*1000)-130
     # std_dia = round(0.07*mean_dia) + 6
     std_dia = round(0.15*mean_dia)
-    
+
     min_sys = mean_sys - 3*(std_sys+std_s1)
     max_sys = mean_sys + 3*(std_sys+std_s1)
     min_dia = mean_dia - 3*std_dia
@@ -406,12 +387,12 @@ def _get_duration_params(hr,sys,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22):
     max_s1 = mean_s1 + 3*std_s1
     min_s2 = mean_s2 - 3*std_s2
     max_s2 = mean_s2 + 3*std_s2
-    
+
     # max_duration = (60/hr)*1000
     max_duration = max([max_s1+2*std_s1,max_s2+2*std_s2,max_sys+2*(std_sys+std_s1),max_dia+2*std_dia])
     # min_duration = min([min_s1-2*std_s1,min_s2-2*std_s2,min_sys-2*(std_sys-std_s1),min_dia-2*std_dia])
     return max_duration, mean_sys, std_sys, mean_dia, std_dia
-    
+
 def _get_duration_distributions(hr,sys,f_fs,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22):
     max_duration, mean_sys, std_sys, mean_dia, std_dia = _get_duration_params(hr,sys,mean_s1,mean_s2,std_s1,std_s2)
     # fs_scale = round(sig_fs/f_fs)

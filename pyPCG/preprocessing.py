@@ -1,29 +1,29 @@
-import pyPCG as pcg
+from pyPCG import pcg_signal
 import scipy.signal as signal
 import numpy as np
 import pywt
 import copy
 import emd
 
-def envelope(sig: pcg.pcg_signal) -> pcg.pcg_signal:
+def envelope(sig: pcg_signal) -> pcg_signal:
     """Calculates the envelope of the signal based on Hilbert transformation
 
     Args:
-        sig (pcg.pcg_signal): input signal
+        sig (pcg_signal): input signal
 
     Returns:
-        pcg.pcg_signal: envelope
+        pcg_signal: envelope
     """
     ret_sig = copy.deepcopy(sig)
     ret_sig.processing_log.append("Envelope")
     ret_sig.data = np.abs(signal.hilbert(ret_sig.data)) # type: ignore
     return ret_sig
 
-def homomorphic(sig: pcg.pcg_signal, filt_ord: int = 6, filt_cutfreq: float = 8) -> pcg.pcg_signal:
+def homomorphic(sig: pcg_signal, filt_ord: int = 6, filt_cutfreq: float = 8) -> pcg_signal:
     """Calculate the homomoprphic envelope of the signal
 
     Args:
-        sig (pcg.pcg_signal): input signal
+        sig (pcg_signal): input signal
         filt_ord (int, optional): lowpass filter order. Defaults to 6.
         filt_cutfreq (float, optional): lowpass filter cutoff frequency. Defaults to 8.
 
@@ -31,7 +31,7 @@ def homomorphic(sig: pcg.pcg_signal, filt_ord: int = 6, filt_cutfreq: float = 8)
         ValueError: The cutoff frequency exceeds the Nyquist limit
 
     Returns:
-        pcg.pcg_signal: homomoprhic envelope
+        pcg_signal: homomoprhic envelope
     """
     if filt_cutfreq>sig.fs/2:
         raise ValueError("Filter cut frequency exceeds Nyquist limit")
@@ -45,21 +45,21 @@ def homomorphic(sig: pcg.pcg_signal, filt_ord: int = 6, filt_cutfreq: float = 8)
     ret_sig.data = np.exp(filt)
     return ret_sig
 
-def filter(sig: pcg.pcg_signal, filt_ord: int, filt_cutfreq: float, filt_type: str = "LP") -> pcg.pcg_signal:
-    """Filters the signal based on the input parameters
+def filter(sig: pcg_signal, filt_ord: int, filt_cutfreq: float, filt_type: str = "LP") -> pcg_signal:
+    """Filters the signal based on the input parameters with a Butterworth filter design
 
     Args:
-        sig (pcg.pcg_signal): input signal
+        sig (pcg_signal): input signal
         filt_ord (int): filter order
         filt_cutfreq (float): filter cutoff frequency
-        filt_type (str, optional): filter type: "LP" or "HP". Defaults to "LP".
+        filt_type (str, optional): filter type: `"LP"` (low-pass) or `"HP"` (high-pass). Defaults to `"LP"`.
 
     Raises:
         NotImplementedError: Other filter type
         ValueError: Filter cutoff exceeds Nyquist limit
 
     Returns:
-        pcg.pcg_signal: filtered signal
+        pcg_signal: filtered signal
     """
     longname = ""
     if filt_type == "LP":
@@ -76,17 +76,17 @@ def filter(sig: pcg.pcg_signal, filt_ord: int, filt_cutfreq: float, filt_type: s
     ret_sig.processing_log.append(f"{filt_type} Filter (order-{filt_ord}, cut-{filt_cutfreq})")
     return ret_sig
 
-def wt_denoise(sig: pcg.pcg_signal, th: float=0.2, wt_family: str = "coif4", wt_level: int = 5) -> pcg.pcg_signal:
+def wt_denoise(sig: pcg_signal, th: float=0.2, wt_family: str = "coif4", wt_level: int = 5) -> pcg_signal:
     """Denoise the signal with a wavelet thresholding method
 
     Args:
-        sig (pcg.pcg_signal): input noisy signal
+        sig (pcg_signal): input noisy signal
         th (float, optional): threshold value given as a percentage of maximum. Defaults to 0.2.
         wt_family (str, optional): wavelet family. Defaults to "coif4".
         wt_level (int, optional): wavelet decomposition level. Defaults to 5.
 
     Returns:
-        pcg.pcg_signal: denoised signal
+        pcg_signal: denoised signal
     """
     ret_sig = copy.deepcopy(sig)
     th_coeffs = []
@@ -97,16 +97,16 @@ def wt_denoise(sig: pcg.pcg_signal, th: float=0.2, wt_family: str = "coif4", wt_
     ret_sig.processing_log.append(f"Wavelet denoise (family-{wt_family}, level-{wt_level}, th-{th})")
     return ret_sig
 
-def slice_signal(sig: pcg.pcg_signal, time_len: float=60, overlap: float=0) -> list[pcg.pcg_signal]:
+def slice_signal(sig: pcg_signal, time_len: float=60, overlap: float=0) -> list[pcg_signal]:
     """Slice long signal into a list of shorter signals
 
     Args:
-        sig (pcg.pcg_signal): input long signal
+        sig (pcg_signal): input long signal
         time_len (float, optional): desired short timelength [seconds]. Defaults to 60.
         overlap (float, optional): overlap percentage. Defaults to 0.
 
     Returns:
-        list[pcg.pcg_signal]: list of shorter signals
+        list[pcg_signal]: list of shorter signals
     """
     time_len_s = round(time_len*sig.fs)
     step = time_len_s-round(time_len_s*overlap)
@@ -118,20 +118,23 @@ def slice_signal(sig: pcg.pcg_signal, time_len: float=60, overlap: float=0) -> l
         if end >= len(sig.data):
             end = len(sig.data)
             at_end = True
-        sliced = pcg.pcg_signal(sig.data[start:end],sig.fs)
+        sliced = pcg_signal(sig.data[start:end],sig.fs)
         acc.append(sliced)
         start += step
     return acc
 
-def emd_denoise_sth(sig: pcg.pcg_signal) -> pcg.pcg_signal:
-    """EMD based denoising with soft threshold method. Based on: Boudraa, Abdel-O & Cexus, Jean-Christophe & Saidi, Zazia. (2005). EMD-Based Signal Noise Reduction. Signal Processing. 1.
+def emd_denoise_sth(sig: pcg_signal) -> pcg_signal:
+    """EMD based denoising with soft threshold method.
+    
+    Based on: Boudraa, Abdel-O & Cexus, Jean-Christophe & Saidi, Zazia. (2005). EMD-Based Signal Noise Reduction. Signal Processing. 1.
+    
     Note: Tau parameter calculation modified
 
     Args:
-        sig (pcg.pcg_signal): input signal
+        sig (pcg_signal): input signal
 
     Returns:
-        pcg.pcg_signal: denoised signal
+        pcg_signal: denoised signal
     """
     imf = emd.sift.sift(sig.data)
     mad = np.median(np.abs(imf - np.median(imf,axis=0)),axis=0) #type: ignore
@@ -144,16 +147,18 @@ def emd_denoise_sth(sig: pcg.pcg_signal) -> pcg.pcg_signal:
     ret_sig.processing_log.append("EMD denoising (soft th)")
     return ret_sig
 
-def emd_denoise_savgol(sig: pcg.pcg_signal, window: int=10, poly: int=3) -> pcg.pcg_signal:
-    """EMD based denoising method with Savoy-Golatzky filter method. Based on: Boudraa, Abdel-O & Cexus, Jean-Christophe & Saidi, Zazia. (2005). EMD-Based Signal Noise Reduction. Signal Processing. 1.
+def emd_denoise_savgol(sig: pcg_signal, window: int=10, poly: int=3) -> pcg_signal:
+    """EMD based denoising method with Savoy-Golatzky filter method.
+    
+    Based on: Boudraa, Abdel-O & Cexus, Jean-Christophe & Saidi, Zazia. (2005). EMD-Based Signal Noise Reduction. Signal Processing. 1.
 
     Args:
-        sig (pcg.pcg_signal): input signal
+        sig (pcg_signal): input signal
         window (int, optional): savgol filter window size [samples]. Defaults to 10.
         poly (int, optional): savgol polynomial degree to fit. Defaults to 3.
 
     Returns:
-        pcg.pcg_signal: denoised signal
+        pcg_signal: denoised signal
     """
     imf = emd.sift.sift(sig.data)
     th_imf = signal.savgol_filter(imf,window,poly,mode="nearest")
@@ -162,16 +167,16 @@ def emd_denoise_savgol(sig: pcg.pcg_signal, window: int=10, poly: int=3) -> pcg.
     ret_sig.processing_log.append("EMD denoising (savgol)")
     return ret_sig
 
-def wt_denoise_sth(sig: pcg.pcg_signal, wt_family: str = "coif4", wt_level: int = 5) -> pcg.pcg_signal:
-    """Denoise the signal with automatic wavelet thresholding method
+def wt_denoise_sth(sig: pcg_signal, wt_family: str = "coif4", wt_level: int = 5) -> pcg_signal:
+    """Denoise the signal with automatic wavelet thresholding method. Threshold is calculated automatically based on...
 
     Args:
-        sig (pcg.pcg_signal): input noisy signal
+        sig (pcg_signal): input noisy signal
         wt_family (str, optional): wavelet family. Defaults to "coif4".
         wt_level (int, optional): wavelet decomposition level. Defaults to 5.
 
     Returns:
-        pcg.pcg_signal: denoised signal
+        pcg_signal: denoised signal
     """
     ret_sig = copy.deepcopy(sig)
     th_coeffs = []
@@ -186,15 +191,15 @@ def wt_denoise_sth(sig: pcg.pcg_signal, wt_family: str = "coif4", wt_level: int 
     ret_sig.processing_log.append(f"Wavelet denoise (family-{wt_family}, level-{wt_level})")
     return ret_sig
 
-def resample(sig: pcg.pcg_signal, target_fs:int) -> pcg.pcg_signal:
+def resample(sig: pcg_signal, target_fs:int) -> pcg_signal:
     """Resample signal to target samplerate
 
     Args:
-        sig (pcg.pcg_signal): input signal
+        sig (pcg_signal): input signal
         target_fs (int): target samplerate
 
     Returns:
-        pcg.pcg_signal: resampled signal
+        pcg_signal: resampled signal
     """
     ret_sig = copy.deepcopy(sig)
     ret_sig.data = signal.resample_poly(ret_sig.data,target_fs,ret_sig.fs)

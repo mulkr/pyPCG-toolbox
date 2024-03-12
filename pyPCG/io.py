@@ -9,18 +9,20 @@ def read_signal_file(path: str, format: str) -> tuple[npt.NDArray[np.int_],int]:
     """Read in fetal heartsound containing file
     
     Supported file formats:
+    
     - `wav`: wav file
+    - `mat`: MATLAB file (containing two variables: `fs`-samplerate, `sig`-signal data)
     - `raw`: raw binary (headerless)
-    - `mat`: MATLAB file (with two variables: `fs`-samplerate, `sig`-signal data)
     - `FETA`: every second byte is PCG data (headerless)
-    - `1k`: 1 kB chunks (!untested!)
+    - `1k`: 1 kB chunks (CURRENTLY UNTESTED)
 
     Args:
         path (str): Path to input file
         format (str): File format identification
 
     Returns:
-        signal (numpy.ndarray[int]): Unprocessed heartsound signal read in from file
+        signal (np.ndarray): Unprocessed heartsound signal read in from file
+        fs (int): Sample rate in Hz. If the input file was headerless, then the value is 0
     """
     
     signal = np.array([])
@@ -31,7 +33,7 @@ def read_signal_file(path: str, format: str) -> tuple[npt.NDArray[np.int_],int]:
         if format == 'raw':
             signal = data
         elif format == '1k':
-            warnings.warn("1k format is not yet tested")
+            warnings.warn("1k format is not yet tested. Use at your own risk")
             BLOCK_SIZE = 1024
             block_count = floor(len(data)/BLOCK_SIZE)
             for i in range(block_count):
@@ -88,15 +90,15 @@ def read_hsannot_file(fpath: str) -> tuple[list,list]:
     """Reads manually labeled heartsounds from annotation csv file
     
     The csv format has to be the following:
-    - `Location`: heartsound location [seconds]
-    - `Value`: heartsound type [`"S1"` or `"S2"`]
+    
+    - `Location`: heartsound location in seconds
+    - `Value`: heartsound type of `"S1"` or `"S2"`
 
     Args:
         fpath (str): path to annotation file
 
     Returns:
-        s1_loc (list[float]): S1 annotation locations
-        s2_loc (list[float]): S2 annotation locations
+        tuple[list[float],list[float]]: S1 and S2 annotation locations
     """
     
     s1_loc, s2_loc = [],[]

@@ -168,8 +168,7 @@ def window_operator(data: npt.NDArray[np.float_],win_size: int,fun: Callable,ove
         overlap_percent (float, optional): window overlap as a ratio to the window size. Defaults to 0.5.
 
     Returns:
-        np.ndarray: window sample locations (usually used as time dimension)
-        np.ndarray: calculated values in the windows
+        tuple[np.ndarray,np.ndarray]: window sample locations (usually used as time dimension), and calculated values in the windows
     """
     step = win_size-round(win_size*overlap_percent)
     val,loc = [], []
@@ -193,17 +192,9 @@ class stats_group:
     """Group statistic calculations together for reuse
     
     Attributes:
-    ----------
         configs (list[tuple[Callable,str]]): List of statistic calculations with names
         signal_stats (dict[str, dict[str, list[float]]]): Signal statistics by segment
         dataframe (pd.DataFrame): Pandas dataframe container of statistics for utility
-    
-    Methods:
-    -------
-        run(ftr_dict): Run the statistic calculations based on the elements of configs
-        add_stat(segment, stats): add calculated statistics to signal_stats with the given segment name
-        calc_group_stats(total_ftr_dict): calculate all stats on all given features and segments (feature_dict named by segment)
-        export(filename): Export statistics to excel file
     """
     def __init__(self,*stats: tuple[Callable,str]) -> None:
         self.configs = []
@@ -275,7 +266,6 @@ class stats_group:
                 sub = self.dataframe[self.dataframe["Segment"]==segment][self.dataframe.columns.difference(["Segment"],sort=False)]
                 sub.to_excel(excel_writer=writer,sheet_name=segment,index=False)
 
-#TODO: Extract this to class?
 def calc_group_stats(ftr_dict: dict[str,dict[str,npt.NDArray[np.float_]]], *configs: tuple[Callable,str]) -> dict[str,list[float]]:
     """Calculate the same statistics for different segments and their features
 
@@ -296,7 +286,6 @@ def calc_group_stats(ftr_dict: dict[str,dict[str,npt.NDArray[np.float_]]], *conf
                 cols[config[1]].append(config[0](val))
     return cols
 
-#TODO: Extract this to class?
 def export_stats(filename: str, group_stats: dict[str,list[float]]):
     """Export statistics calculated with calc_group_stats to excel
 
