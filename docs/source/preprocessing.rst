@@ -1,7 +1,5 @@
-pyPCG.preprocessing
-===================
-.. automodule:: pyPCG.preprocessing
-
+Preprocessing
+=============
 Transform the signal
 --------------------
 .. autofunction:: pyPCG.preprocessing.slice_signal
@@ -22,3 +20,9 @@ Denoising functions
 Filtering
 ---------
 .. autofunction:: pyPCG.preprocessing.filter
+
+Processing pipeline
+-------------------
+.. autotypeddict:: pyPCG.preprocessing.process_config 
+.. autoclass:: pyPCG.preprocessing.process_pipeline
+    :members:

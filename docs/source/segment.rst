@@ -1,6 +1,5 @@
-pyPCG.segment
-=============
-.. automodule:: pyPCG.segment
+Segmentation
+============
 
 Peak detection based segmentation
 ---------------------------------
@@ -10,6 +9,7 @@ Peak detection based segmentation
 
 LR-HSMM based segmentation
 --------------------------
+.. autoenum:: pyPCG.segment.heart_state
 .. autofunction:: pyPCG.segment.load_hsmm
 .. autofunction:: pyPCG.segment.segment_hsmm
 .. autofunction:: pyPCG.segment.convert_hsmm_states

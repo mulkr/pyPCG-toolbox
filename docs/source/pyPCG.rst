@@ -1,11 +1,5 @@
-pyPCG
-=====
-.. automodule:: pyPCG
-
-The main module for PCG processing.
-
-Includes the main signal object, basic processing functions and the processing pipeline class.
-
+Baiscs
+======
 Main signal object
 ------------------
 .. autoclass:: pyPCG.pcg_signal
@@ -20,8 +14,3 @@ Basic processing
 Visualization
 -------------
 .. autofunction:: pyPCG.plot
-
-Processing pipeline
-------------------- 
-.. autoclass:: pyPCG.process_pipeline
-    :members:

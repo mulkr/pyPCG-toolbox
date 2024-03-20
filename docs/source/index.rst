@@ -8,8 +8,8 @@ Planned release: soon
 
 .. toctree::
    usage
-   pyPCG
    io
+   pyPCG
    sqi
    preprocessing
    segment
