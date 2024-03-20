@@ -21,8 +21,7 @@ def read_signal_file(path: str, format: str) -> tuple[npt.NDArray[np.int_],int]:
         format (str): File format identification
 
     Returns:
-        signal (np.ndarray): Unprocessed heartsound signal read in from file
-        fs (int): Sample rate in Hz. If the input file was headerless, then the value is 0
+        tuple[np.ndarray,int]: Unprocessed heartsound signal read in from file, and sample rate in Hz. If the input file was headerless, then the value is 0
     """
     
     signal = np.array([])
@@ -86,7 +85,7 @@ def read_signal_file(path: str, format: str) -> tuple[npt.NDArray[np.int_],int]:
             raise ValueError('Format not recognized')
     return np.array(signal).astype(int), fs
 
-def read_hsannot_file(fpath: str) -> tuple[list,list]:
+def read_hsannot_file(fpath: str) -> tuple[list[float],list[float]]:
     """Reads manually labeled heartsounds from annotation csv file
     
     The csv format has to be the following:
