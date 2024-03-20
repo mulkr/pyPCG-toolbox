@@ -80,10 +80,10 @@ def read_signal_file(path: str, format: str) -> tuple[npt.NDArray[np.int_],int]:
         elif format == 'mat':
             mat = sio.loadmat(path)
             fs = mat["fs"][0,0]
-            signal = mat["sig"][0]
+            signal = np.squeeze(mat["sig"])
         else:
             raise ValueError('Format not recognized')
-    return np.array(signal).astype(int), fs
+    return np.array(signal), fs
 
 def read_hsannot_file(fpath: str) -> tuple[list[float],list[float]]:
     """Reads manually labeled heartsounds from annotation csv file
