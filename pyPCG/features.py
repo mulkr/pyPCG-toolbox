@@ -5,7 +5,7 @@ import numpy.typing as npt
 import scipy.ndimage as ndimage
 import scipy.fft as fft
 import pywt
-from typing import Callable, Literal
+from typing import Callable, Literal, TypedDict
 from pyPCG import pcg_signal
 
 def _check_start_end(start,end):
@@ -403,7 +403,9 @@ def katz_fd(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signa
 
 def lyapunov(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,dim:int=4,lag:int=3) -> npt.NDArray[np.float_]:
     """Estimate Lyapunov exponent with nolds
-    Note: this currently has parity problems with Matlab's lyapunovExponent function
+    
+    Note:
+        This currently has parity problems with Matlab's lyapunovExponent function
 
     Args:
         start (np.ndarray): start times in samples
@@ -423,9 +425,18 @@ def lyapunov(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_sign
         ret.append(ly)
     return np.array(ret)
 
+class _config(TypedDict):
+    calc_fun: Callable
+    """funtcion for calculation"""
+    name: str
+    """name of feature"""
+    input: Literal["env"]|Literal["raw"]
+    """input signal type, `env` for envelope, `raw` for non-envelope signal"""
 
-feature_config = tuple[Callable,str,Literal["raw"]|Literal["env"]] | \
-                 tuple[Callable,str,Literal["raw"]|Literal["env"], dict[str,int|float|str]]
+class feature_config(_config,total=False):
+    """Type to hold feature calculation configs"""
+    params: dict[str,int|float|str]
+    """parameters to pass to feature calculation function"""
 
 class feature_group:
     """Group feature calculations together for reuse
@@ -448,13 +459,13 @@ class feature_group:
             ends (np.ndarray): end times in samples
 
         Returns:
-            dict[str,np.ndarray]: calculated features, with the names given in feature_configs
+            dict[str,np.ndarray]: calculated features, with the names given in `feature_configs` field
         """
         ret_dict = {}
         for ftr in self.feature_configs:
-            in_sig = raw_sig if ftr[2] == "raw" else env_sig
-            calc = ftr[0](starts,ends,in_sig) if len(ftr) == 3 else ftr[0](starts,ends,in_sig,**ftr[3])
-            ret_dict[ftr[1]] = calc[0] if type(calc) is tuple else calc
+            in_sig = raw_sig if ftr["input"] == "raw" else env_sig
+            calc = ftr["calc_fun"](starts,ends,in_sig) if len(ftr) == 3 else ftr["calc_fun"](starts,ends,in_sig,**ftr["params"])
+            ret_dict[ftr["name"]] = calc[0] if type(calc) is tuple else calc
         return ret_dict
 
 if __name__ == '__main__':

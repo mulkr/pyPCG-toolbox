@@ -3,7 +3,7 @@ import pandas as pd
 import numpy.typing as npt
 import scipy.stats as sts
 from scipy.special import erfcinv
-from typing import Callable
+from typing import Callable, TypedDict
 
 def trim_transform(data: npt.NDArray[np.float_], trim_precent: float) -> npt.NDArray[np.float_]:
     """Trim the upper and lower percentage of values
@@ -188,15 +188,22 @@ def iqr(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
     """
     return percentile(data,75)-percentile(data,25)
 
+class stats_config(TypedDict):
+    """Type to hold statistic calculation configs"""
+    calc_fun: Callable
+    """function for calculation"""
+    name: str
+    """name of the calculated statistic"""
+
 class stats_group:
     """Group statistic calculations together for reuse
     
     Attributes:
-        configs (list[tuple[Callable,str]]): List of statistic calculations with names
-        signal_stats (dict[str, dict[str, list[float]]]): Signal statistics by segment
+        configs (list[stats_config]): List of statistic calculations with names
+        signal_stats (dict[str, dict[str, list[float]]]): Signal statistics by segment, #TODO: this will become its own type in the future
         dataframe (pd.DataFrame): Pandas dataframe container of statistics for utility
     """
-    def __init__(self,*stats: tuple[Callable,str]) -> None:
+    def __init__(self,*stats: stats_config) -> None:
         self.configs = []
         self.signal_stats = {}
         self.dataframe = pd.DataFrame()
@@ -228,11 +235,11 @@ class stats_group:
         """
         ret = {"Feature":[]}
         for stat in self.configs:
-            ret[stat[1]] = []
+            ret[stat["name"]] = []
         for name,value in ftr_dict.items():
             ret["Feature"].append(name)
             for stat in self.configs:
-                ret[stat[1]].append(stat[0](value))
+                ret[stat["name"]].append(stat["calc_fun"](value))
         return ret
     
     def add_stat(self,segment:str, stats:dict[str,list[float]]):
