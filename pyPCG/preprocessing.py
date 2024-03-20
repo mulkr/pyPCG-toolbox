@@ -271,7 +271,7 @@ class process_pipeline:
         """
         out = input
         for step in self.steps:
-            if type(step) is process_config:
+            if type(step) is process_config or type(step) is dict:
                 out = step["step"](out,**step["params"])
             else:
                 out = step(out)
