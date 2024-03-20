@@ -60,7 +60,9 @@ def _fast_cfsd(sig,f1,f2,k):
     return np.abs(g)
 
 def periodicity_score(sig: pcg_signal, f1:float=0.3, f2:float=2.5, k:int=200) -> float:
-    """Calculate SQI based on cylcic periodicity
+    """Calculate SQI based on cylcic periodicity.
+    
+    Larger -> Better
 
     Args:
         sig (pcg_signal): input signal (envelope)
@@ -69,27 +71,33 @@ def periodicity_score(sig: pcg_signal, f1:float=0.3, f2:float=2.5, k:int=200) ->
         k (int, optional): weight parameter. Defaults to 200.
 
     Returns:
-        float: Periodicity score [larger -> better]
+        float: Periodicity score
     """
     gamma = _fast_cfsd(sig,f1,f2,k)
     return np.max(gamma)/np.median(gamma)
 
-def sentropy(sig: pcg_signal, win:int=2, r:float=0.2) -> float:
+def sentropy(sig: pcg_signal, win:int=2, r:float=0.2, precalc:bool=False) -> float:
     """Calculate sample entropy SQI
+    
+    Smaller -> Better
 
     Args:
-        sig (pcg_signal): input signal (envelope)
+        sig (pcg_signal): input signal
         win (int, optional): window size. Defaults to 2.
         r (float, optional): weight parameter. Defaults to 0.2.
+        precalc (bool, optional): is the input a precalculated envelope. Defaults to False.
 
     Returns:
-        float: sample entropy [smaller -> better]
+        float: sample entropy
     """
-    env = preproc.resample(preproc.envelope(sig),30)
+    temp = preproc.envelope(sig) if not precalc else sig
+    env = preproc.resample(temp,30)
     return _sample_entropy_fast(env.data,win,r)
 
 def autocorr_max(sig: pcg_signal, bpm_min: float=100, bpm_max: float=200) -> float:
     """Calculate SQI based on autocorrelation.
+    
+    Larger -> Better
 
     Args:
         sig (pcg_signal): input signal (envelope)
@@ -105,21 +113,26 @@ def autocorr_max(sig: pcg_signal, bpm_min: float=100, bpm_max: float=200) -> flo
     m = np.max(ar[expect_min:expect_max])
     return m
 
-def env_std(sig: pcg_signal) -> float:
+def env_std(sig: pcg_signal, precalc: bool=False) -> float:
     """Calculate standard deviation of the envelope values
+    
+    Smaller -> Better
 
     Args:
         sig (pcg_signal): input signal
+        precalc (bool, optional): is the input a precalculated envelope. Defaults to False.
 
     Returns:
         float: standard deviation of envelope
     """
-    env = preproc.envelope(sig) #TODO: remove this if the input is the envelope
+    env = preproc.envelope(sig) if not precalc else sig
     s = np.std(env.data).astype(float)
     return s
 
 def raw_kurt(sig: pcg_signal) -> float:
     """Calculate kurtosis of raw signal values
+    
+    Larger -> Better
 
     Args:
         sig (pcg_signal): input signal
