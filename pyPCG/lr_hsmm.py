@@ -34,7 +34,7 @@ class LR_HSMM():
         expected_hr_range (tuple[float,float]): Minimum and maximum expected heartrates. Default: (30,120) [bpm]
 
         hsmm_model (hsmmlearn.hsmm.HSMMModel): State predictor model
-        lr_model (hsmmlear.emissions.AbstractEmissions): Probability emissions for the HSMM states. Includes a LogisticRegression model for each state
+        lr_model (hsmmlearn.emissions.AbstractEmissions): Probability emissions for the HSMM states. Includes a LogisticRegression model for each state
     """
 
     def __init__(self) -> None:
