@@ -16,3 +16,9 @@ classifiers = [
     "License :: OSI Approved :: GPL-3.0-only",
     "Operating System :: OS Independent",
 ]
+
+[tool.setuptools]
+packages = ["pyPCG"]
+
+[tool.setuptools.package-data]
+data = ["*.wav","*.json","*.mat"]
