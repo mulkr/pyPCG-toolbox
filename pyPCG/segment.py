@@ -1,3 +1,4 @@
+from enum import Enum
 import numpy as np
 import numpy.typing as npt
 import scipy.signal as sgnl
@@ -27,6 +28,7 @@ def adv_peak(signal: pcg_signal, percent_th:float=0.5) -> tuple[npt.NDArray[np.f
 
 def peak_sort_diff(peak_locs: npt.NDArray[np.int_]) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.int_]]:
     """Sort detected peaks based on time differences.
+    
     A short time difference corresponds with systole -> S1-S2, a long time difference corresponds with diastole -> S2-S1
 
     Args:
@@ -48,6 +50,7 @@ def peak_sort_diff(peak_locs: npt.NDArray[np.int_]) -> tuple[npt.NDArray[np.int_
 
 def segment_peaks(peak_locs: npt.NDArray[np.int_], envelope_signal: pcg_signal ,start_drop:float=0.6, end_drop:float=0.6) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.int_]]:
     """Create start and end locations from the detected peaks based on the provided envelope.
+    
     The relative drop in envelope value is marked as the start and end positions of the given heartsound
 
     Args:
@@ -74,7 +77,10 @@ def segment_peaks(peak_locs: npt.NDArray[np.int_], envelope_signal: pcg_signal ,
     return np.array(starts), np.array(ends)
 
 def load_hsmm(path:str) -> lr_hsmm.LR_HSMM:
-    """Load pretrained LR-HSMM model. (Training is done internally, it is not recommended to use it right now)
+    """Load pretrained LR-HSMM model.
+    
+    Note:
+        Training is done internally, it is not recommended to use it right now
 
     Args:
         path (str): path to pretrained model json file
@@ -97,24 +103,43 @@ def segment_hsmm(model:lr_hsmm.LR_HSMM,signal:pcg_signal) -> npt.NDArray[np.floa
         ValueError: Samplerate discrepancy
 
     Returns:
-        np.ndarray: heartcycle states [1-S1, 2-sys, 3-S2, 4-dia]
+        np.ndarray: heartcycle states
     """
-    #TODO: Replace int values with enum
     if(model.signal_fs!=signal.fs):
         raise ValueError(f"Unexpected signal samplerate {signal.fs}, LR-HSMM expects {model.signal_fs}")
     states, _ = model.segment_single(signal.data)
     return states
 
-def convert_hsmm_states(states: npt.NDArray[np.float_], state_id: int) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.int_]]:
+class heart_state(Enum):
+    """Heart states enum"""
+    S1 = 1
+    SYS = 2
+    S2 = 3
+    DIA = 4
+    unknown = 0
+heart_state.S1.__doc__ = "First heartsound"
+heart_state.S2.__doc__ = "Second heartsound"
+heart_state.SYS.__doc__ = "Systole section"
+heart_state.DIA.__doc__ = "Diastole section"
+heart_state.unknown.__doc__ = "Default value, unknown state"
+
+def convert_hsmm_states(states: npt.NDArray[np.float_], state_id: int|heart_state) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.int_]]:
     """Convert selected LR-HSMM state to start and end times
 
     Args:
         states (np.ndarray): output states of LR-HSMM
-        state_id (int): selected state to convert [1-S1, 2-systole, 3-S2, 4-diastole]
+        state_id (int, heart_state): selected state to convert
+
+    Raises:
+        ValueError: Unrecognized heart cycle state
 
     Returns:
         tuple[np.ndarray,np.ndarray]: state boundaries in samples
     """
+    if (type(state_id) is int) and (state_id not in [0,1,2,3,4]):
+        raise ValueError(f"Unrecognized heart cycle state: {state_id}")
+    if type(state_id) is heart_state:
+        state_id = int(state_id.value)
     select = np.zeros_like(states)
     select[states==state_id] = 1
     states_diff = np.diff(select)
