@@ -2,7 +2,6 @@ import numpy as np
 import numpy.typing as npt
 import matplotlib.pyplot as plt
 import copy
-from typing import Callable
 
 __version__ = "0.1-a"
 
@@ -67,62 +66,6 @@ class pcg_signal:
             float: length of signal in seconds
         """
         return len(self.data)/self.fs
-    
-class process_pipeline:
-    """Processing pipeline. One step's input is the previous step's output
-    
-    Attributes:
-        steps (list[Callable | tuple[Callable, dict]]): List of steps as functions or function and parameters as keyword dictionary
-    
-    Example:
-        Creating a simple pipeline
-        
-        >>> import pyPCG
-        >>> my_pipeline = pyPCG.process_pipeline(pyPCG.zero_center, pyPCG.unit_scale)
-        >>> print(my_pipeline)
-        PCG processing pipeline [2 steps]
-        
-        Creating a pipeline with parameters:
-        
-        >>> import pyPCG
-        >>> import pyPCG.preprocessing as preproc
-        >>> # Option 1:
-        >>> # Create a tuple with the appropriate function a dictionary with the parameters passed as keyword arguments
-        >>> step_1 = (preproc.filter,{"filt_ord":6,"filt_cutfreq":100,"filt_type":"LP"})
-        >>> step_2 = (preproc.filter,{"filt_ord":6,"filt_cutfreq":20,"filt_type":"HP"})
-        >>> my_pipeline = pyPCG.process_pipeline(step_1,step_2)
-        >>> # Option 2:
-        >>> # Using `functools.partial`
-        >>> from functools import partial
-        >>> step_a = partial(preproc.filter, filt_ord=6, filt_cutfreq=100, filt_type="LP")
-        >>> step_b = partial(preproc.filter, filt_ord=6, filt_cutfreq=20, filt_type="HP")
-        >>> my_pipeline = pyPCG.process_pipeline(step_a,step_b)
-    """
-    def __init__(self, *configs: Callable|tuple[Callable, dict[str,int|float|str]]) -> None:
-        """Create processing pipeline object"""
-        self.steps = []
-        for k in configs:
-            self.steps.append(k)
-            
-    def __repr__(self) -> str:
-        return f"PCG processing pipeline [{len(self.steps)} steps]"
-    
-    def run(self, input: pcg_signal) -> pcg_signal:
-        """Run the processing pipeline
-
-        Args:
-            input (pcg_signal): input signal
-
-        Returns:
-            pcg_signal: processed signal
-        """
-        out = input
-        for step in self.steps:
-            if type(step) is tuple:
-                out = step[0](out,**step[1])
-            else:
-                out = step(out)
-        return out
 
 def zero_center(sig: pcg_signal) -> pcg_signal:
     """Center signal to zero
@@ -177,7 +120,7 @@ def normalize(sig: pcg_signal) -> pcg_signal:
     """
     return unit_scale(zero_center(sig))
 
-def plot(sig: pcg_signal, zeroline: bool=False) -> None:
+def plot(sig: pcg_signal, zeroline: bool=False, xlim: tuple|None=None) -> None:
     """Plot pcg signal with appropriate dimensions
 
     Args:
@@ -192,6 +135,8 @@ def plot(sig: pcg_signal, zeroline: bool=False) -> None:
     plt.title(sig.processing_log[-1])
     plt.xlabel("Time (s)")
     plt.ylabel("PCG (a.u.)")
+    if xlim is not None:
+        plt.xlim(xlim)
 
 def multiplot(*args):
     for sig in args:

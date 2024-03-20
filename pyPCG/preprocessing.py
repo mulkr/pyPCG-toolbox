@@ -4,6 +4,7 @@ import numpy as np
 import pywt
 import copy
 import emd
+from typing import Callable, TypedDict
 
 def envelope(sig: pcg_signal) -> pcg_signal:
     """Calculates the envelope of the signal based on Hilbert transformation
@@ -206,6 +207,75 @@ def resample(sig: pcg_signal, target_fs:int) -> pcg_signal:
     ret_sig.fs = target_fs
     ret_sig.processing_log.append(f"Resample to {target_fs} Hz")
     return ret_sig
+
+class process_config(TypedDict):
+    """Type to hold processing calculation configs"""
+    step: Callable
+    """function for the calculation"""
+    params: dict[str,int|float|str]
+    """parameters to pass to the function as keyword arguments"""
+
+class process_pipeline:
+    """Processing pipeline. One step's input is the previous step's output
+    
+    Attributes:
+        steps (list[Callable | process_config]): List of steps as functions or function and parameters as keyword dictionary
+    
+    Example:
+        Creating a simple pipeline
+        
+        >>> import pyPCG
+        >>> my_pipeline = pyPCG.process_pipeline(pyPCG.zero_center, pyPCG.unit_scale)
+        >>> print(my_pipeline)
+        PCG processing pipeline [2 steps]
+        
+        Creating a pipeline with parameters:
+        
+        Option 1: Create a dictionary with the appropriate function with the parameters passed as keyword arguments
+        
+        For an easier experience, use the `process_config` type
+        
+        >>> import pyPCG
+        >>> import pyPCG.preprocessing as preproc
+        >>> step_1 = {"step":preproc.filter,"params":{"filt_ord":6,"filt_cutfreq":100,"filt_type":"LP"}}
+        >>> step_2 = {"step":preproc.filter,"params":{"filt_ord":6,"filt_cutfreq":20,"filt_type":"HP"}}
+        >>> my_pipeline = pyPCG.process_pipeline(step_1,step_2)
+        
+        Option 2:
+        Using ``functools.partial``
+        
+        >>> import pyPCG
+        >>> import pyPCG.preprocessing as preproc
+        >>> from functools import partial
+        >>> step_1 = partial(preproc.filter, filt_ord=6, filt_cutfreq=100, filt_type="LP")
+        >>> step_2 = partial(preproc.filter, filt_ord=6, filt_cutfreq=20, filt_type="HP")
+        >>> my_pipeline = pyPCG.process_pipeline(step_1,step_2)
+    """
+    def __init__(self, *configs: Callable|process_config) -> None:
+        """Create processing pipeline object"""
+        self.steps = []
+        for k in configs:
+            self.steps.append(k)
+            
+    def __repr__(self) -> str:
+        return f"PCG processing pipeline [{len(self.steps)} steps]"
+    
+    def run(self, input: pcg_signal) -> pcg_signal:
+        """Run the processing pipeline
+
+        Args:
+            input (pcg_signal): input signal
+
+        Returns:
+            pcg_signal: processed signal
+        """
+        out = input
+        for step in self.steps:
+            if type(step) is process_config:
+                out = step["step"](out,**step["params"])
+            else:
+                out = step(out)
+        return out
 
 if __name__ == '__main__':
     print("Preprocessing functions")
