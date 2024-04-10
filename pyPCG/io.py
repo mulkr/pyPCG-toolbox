@@ -22,6 +22,20 @@ def read_signal_file(path: str, format: str) -> tuple[npt.NDArray[np.int_],int]:
 
     Returns:
         tuple[np.ndarray,int]: Unprocessed heartsound signal read in from file, and sample rate in Hz. If the input file was headerless, then the value is 0
+    
+    Example:
+        Read in a 1 min wav file with 333 Hz samplerate
+        
+        >>> import pyPCG.io as pcg_io
+        >>> data, fs = pcg_io.read_signal_file("example.wav","wav")
+        >>> print(len(data),fs)
+        19980 333
+        
+        Raw binary file reading:
+        >>> import pyPCG.io as pcg_io
+        >>> data, fs = pcg_io.read_signal_file("example.dat","raw")
+        >>> print(len(data),fs)
+        19980 0
     """
     
     signal = np.array([])

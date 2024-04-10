@@ -126,6 +126,7 @@ def plot(sig: pcg_signal, zeroline: bool=False, xlim: tuple|None=None) -> None:
     Args:
         sig (pcg_signal): signal to plot
         zeroline (bool, optional): plot a dashed line at zero. Defaults to False.
+        xlim (tuple, optional): set horizontal limits on the plot. Where time is the horizontal axis and it is measured in seconds.
     """
     t = sig.get_timelength()
     plt.plot(np.linspace(0,t,len(sig.data)),sig.data)

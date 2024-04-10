@@ -202,6 +202,30 @@ class stats_group:
         configs (list[stats_config]): List of statistic calculations with names
         signal_stats (dict[str, dict[str, list[float]]]): Signal statistics by segment, #TODO: this will become its own type in the future
         dataframe (pd.DataFrame): Pandas dataframe container of statistics for utility
+        
+    Example:
+        Create a statistic group calculation:
+        
+        For an easier experience use the `stats_config` type
+        
+        >>> import pyPCG.stats as sts
+        >>> stat_1 = {"calc_fun":sts.mean,"name":"Mean"}
+        >>> stat_2 = {"calc_fun":sts.std,"name":"Std"}
+        >>> mean_std = sts.stats_group(stat_1,stat_2)
+        
+        Run the created group with some dummy features:
+        
+        >>> import numpy as np
+        >>> dummy = {"length":np.arange(10),"max freq":np.arange(10)}
+        >>> basic_stats = mean_std.run(dummy)
+        >>> print(basic_stats)
+        {'Feature': ['length', 'max freq'], 'Mean': [4.5, 4.5], 'Std': [2.8722813232690143, 2.8722813232690143]}
+        
+        Add statistics for a given segment, and export it as xlsx:
+        
+        >>> mean_std.add_stat("Test",basic_stats)
+        >>> mean_std.export("test.xlsx")
+        
     """
     def __init__(self,*stats: stats_config) -> None:
         self.configs = []

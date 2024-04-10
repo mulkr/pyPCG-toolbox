@@ -178,6 +178,8 @@ def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_sign
 
 def spectral_spread(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal, factor: float=0.7, nfft: int=512) -> npt.NDArray[np.int_]:
     """Calculate spectral spread of the segments, percentage of the total power of the segment and the frequency difference between the beginning and end of the calculated area
+    
+    For a more detailed definition, see `peak_spread`.
 
     Args:
         start (np.ndarray): start times in samples
@@ -207,6 +209,8 @@ def spectral_spread(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: p
 
 def spectral_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
     """Calculate spectral centroid (center of mass)
+    
+    For a more detailed definition, see `peak_centroid`.
 
     Args:
         start (np.ndarray): start times in samples
@@ -232,6 +236,8 @@ def spectral_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig:
 
 def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal, factor: float=0.7, nfft: int=512) -> npt.NDArray[np.int_]:
     """Calculate conventional width of the spectrum, the difference between the preceding and succeeding frequency locations where the value is at a given proportion of the maximum value
+    
+    For a more detailed definition, see `peak_width`.
 
     Args:
         start (np.ndarray): start times in samples
@@ -303,7 +309,21 @@ def max_cwt(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signa
     return np.array(time),np.array(freq)
 
 def cwt_peakdist(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal, size:int=8) -> npt.NDArray[np.float_]:
-    warnings.warn("CWT calculation done with PyWT which has parity problems with Matlab")
+    """Calculate the distance of the largest two peaks in the continuous wavelet transform of the segment.
+    
+    Note:
+        This currently has parity problems with Matlab's CWT function
+
+    Args:
+        start (np.ndarray): start times in samples
+        end (np.ndarray): end times in samples
+        sig (pcg_signal): input signal
+        size (int, optional): size of maximum filter, i.e. peak neighborhood to check local maximum. Defaults to 8.
+
+    Returns:
+        np.ndarray: distance of two largest peaks in CWT, if only one peak is detected the value is 0
+    """
+    warnings.warn("CWT calculation done with PyWT, which has parity problems with Matlab")
     start, end = _check_start_end(start,end)
     ret = []
     for s,e in zip(start,end):
@@ -417,6 +437,7 @@ def lyapunov(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_sign
     Returns:
         np.ndarray: estimated Lyapunov exponents
     """
+    warnings.warn("Lyapunov exponent calculation done with nolds, which has parity problems with Matlab")
     start, end = _check_start_end(start,end)
     ret = []
     for s,e in zip(start,end):
@@ -443,6 +464,21 @@ class feature_group:
     
     Attributes:
         feature_configs (list[feature_config]): List of configurations for feature calculation.
+        
+    Example:
+        Create a feature group:
+        
+        For an easier experience, use the `feature_config` type
+        
+        >>> import pyPCG.features as ftr
+        >>> ftr_1 = {"calc_fun":ftr.time_delta,"name":"length","input":"raw"}
+        >>> ftr_2 = {"calc_fun":ftr.ramp_time,"name":"onset","input":"env"}
+        >>> ftr_3 = {"calc_fun":ftr.ramp_time,"name":"exit","input":"env","params":{"type":"exit"}}
+        >>> my_group = ftr.feature_group(ftr_1,ftr_2,ftr_3)
+        
+        Run the created group with a regular signal `raw_sig` and its envelope `env_sig` for all detected S1 events (boundaries given as `s1_start`, `s1_end`):
+        
+        >>> my_features = my_group.run(raw_sig,env_sig,s1_start,s1_end)
     """
     def __init__(self,*configs: feature_config) -> None:
         self.feature_configs = []

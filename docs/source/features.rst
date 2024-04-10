@@ -3,11 +3,38 @@ Features
 Time domain features
 --------------------
 .. autofunction:: pyPCG.features.time_delta
-.. autofunction:: pyPCG.features.ramp_time
 .. autofunction:: pyPCG.features.zero_cross_rate
+.. autofunction:: pyPCG.features.ramp_time
+.. figure:: ramp_time.png
+   :align: center
+   :alt: A figure showing the visual definition of the onset and exit time
+   :width: 400
+
+   Onset and exit times in an example S1 case
+
 .. autofunction:: pyPCG.features.peak_spread
+.. figure:: peak_spread.png
+   :align: center
+   :alt: A figure showing the visual definition of the peak spread
+   :width: 400
+
+   Peak spread in an example S1 case
+
 .. autofunction:: pyPCG.features.peak_width
+.. figure:: peak_width.png
+   :align: center
+   :alt: A figure showing the visual definition of the peak width
+   :width: 400
+
+   Peak width in an example S1 case
+
 .. autofunction:: pyPCG.features.peak_centroid
+.. figure:: peak_centroid.png
+   :align: center
+   :alt: A figure showing the visual definition of the peak centroid
+   :width: 400
+
+   Peak centroid in an example S1 case
 
 Frequency domain features
 -------------------------

@@ -129,7 +129,7 @@ def emd_denoise_sth(sig: pcg_signal) -> pcg_signal:
     
     Based on: Boudraa, Abdel-O & Cexus, Jean-Christophe & Saidi, Zazia. (2005). EMD-Based Signal Noise Reduction. Signal Processing. 1.
     
-    Note: Tau parameter calculation modified
+    Note: Tau parameter calculation modified from the original
 
     Args:
         sig (pcg_signal): input signal
@@ -169,7 +169,9 @@ def emd_denoise_savgol(sig: pcg_signal, window: int=10, poly: int=3) -> pcg_sign
     return ret_sig
 
 def wt_denoise_sth(sig: pcg_signal, wt_family: str = "coif4", wt_level: int = 5) -> pcg_signal:
-    """Denoise the signal with automatic wavelet thresholding method. Threshold is calculated automatically based on...
+    """Denoise the signal with automatic wavelet thresholding method. Threshold is calculated automatically.
+    
+    Based on: D.L. Donoho, and I.M. Johnstone, Ideal spatial adaptation by wavelet shrinkage, Biometrika, vol. 81, no. 3, pp. 425-455, 1994
 
     Args:
         sig (pcg_signal): input noisy signal
@@ -241,8 +243,7 @@ class process_pipeline:
         >>> step_2 = {"step":preproc.filter,"params":{"filt_ord":6,"filt_cutfreq":20,"filt_type":"HP"}}
         >>> my_pipeline = pyPCG.process_pipeline(step_1,step_2)
         
-        Option 2:
-        Using ``functools.partial``
+        Option 2: Using ``functools.partial``
         
         >>> import pyPCG
         >>> import pyPCG.preprocessing as preproc
@@ -250,6 +251,12 @@ class process_pipeline:
         >>> step_1 = partial(preproc.filter, filt_ord=6, filt_cutfreq=100, filt_type="LP")
         >>> step_2 = partial(preproc.filter, filt_ord=6, filt_cutfreq=20, filt_type="HP")
         >>> my_pipeline = pyPCG.process_pipeline(step_1,step_2)
+        
+        Use the above pipeline:
+        >>> import pyPCG.io as pcg_io
+        >>> data, fs = pcg_io.read_signal_file("example.wav","wav")
+        >>> example = pyPCG.pcg_signal(data,fs)
+        >>> processed = my_pipeline.run(example)
     """
     def __init__(self, *configs: Callable|process_config) -> None:
         """Create processing pipeline object"""
