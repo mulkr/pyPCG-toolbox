@@ -62,7 +62,6 @@ above
 
     mean_len=0.095 std_len=0.009
     mean_maxfreq=29.278 std_maxfreq=3.078
-    
 
 Statistics group object
 -----------------------
@@ -124,7 +123,6 @@ Now the statistic calculation will look like the following
     example_stats = mean_std.run(example_features)
     print(example_stats)
 
-
 .. parsed-literal::
 
     {'Feature': ['length', 'onset', 'max frequency'], 'Mean': [0.09477387835596791, 0.061852897673793185, 29.278003329730993], 'Std': [0.009471572524317224, 0.011814973307823076, 3.0778448376432928]}
@@ -149,9 +147,6 @@ which contains the added statistics
 .. code:: ipython3
 
     mean_std.dataframe
-
-
-
 
 .. raw:: html
 
@@ -204,8 +199,6 @@ which contains the added statistics
       </tbody>
     </table>
     </div>
-
-
 
 The stored statistics can also be exported to an Excel spreadsheet
 

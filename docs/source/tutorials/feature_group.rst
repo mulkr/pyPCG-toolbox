@@ -105,7 +105,6 @@ configs.
     for key,vals in timings.items():
         print(key,len(vals),f"{vals[0]:.3f}")
 
-
 .. parsed-literal::
 
     length 134 0.087
@@ -127,7 +126,6 @@ Note: this is likely to change in a future version
     
     for key,vals in frequencies.items():
         print(key,len(vals),f"{vals[0]:.3f}")
-
 
 .. parsed-literal::
 

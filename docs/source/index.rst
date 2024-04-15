@@ -49,7 +49,7 @@ The modules implement the following steps:
    :maxdepth: 2
    :caption: Contents:
 
-.. include:: /tutorials
+
 .. toctree:: 
    tutorials/quickstart
    tutorials/process_pipeline
@@ -57,6 +57,7 @@ The modules implement the following steps:
    tutorials/feature_group
    tutorials/stats_group
    :caption: Tutorials:
+   :maxdepth: 1
 
 Correspondence
 --------------
