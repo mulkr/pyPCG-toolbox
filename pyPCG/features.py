@@ -17,7 +17,7 @@ def _check_start_end(start,end):
             end = end[:len(start)]
     return start, end
 
-def time_delta(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_], sig: pcg_signal) -> npt.NDArray[np.float_]:
+def time_delta(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_], sig: pcg_signal) -> npt.NDArray[np.float64]:
     """Calculate time differences between pairs of points
 
     Args:
@@ -31,7 +31,7 @@ def time_delta(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_], sig: pcg_s
     start, end = _check_start_end(start,end)
     return (end-start)/sig.fs
 
-def ramp_time(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg_signal,type: str="onset") -> npt.NDArray[np.float_]:
+def ramp_time(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg_signal,type: str="onset") -> npt.NDArray[np.float64]:
     """Calculate ramp time (onset or exit), the time difference between the boundary and peak
 
     Args:
@@ -59,7 +59,7 @@ def ramp_time(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pc
             raise ValueError("Unrecognized ramp type")
     return np.array(ret)/envelope.fs
 
-def zero_cross_rate(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal) -> npt.NDArray[np.float_]:
+def zero_cross_rate(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal) -> npt.NDArray[np.float64]:
     """Calculate zero cross rate
 
     Args:
@@ -105,7 +105,7 @@ def peak_spread(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: 
                 break
     return np.array(ret)
 
-def peak_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg_signal) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.float_]]:
+def peak_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg_signal) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.float64]]:
     """Calculate centroid (center of mass) of the envelope
 
     Args:
@@ -153,7 +153,7 @@ def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: p
         ret.append(w_e-w_s)
     return np.array(ret)
 
-def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
+def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float64],npt.NDArray[np.float64]]:
     """Calculate frequency with maximum amplitude of the segment
 
     Args:
@@ -207,7 +207,7 @@ def spectral_spread(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: p
                 break
     return np.array(ret)
 
-def spectral_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
+def spectral_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float64],npt.NDArray[np.float64]]:
     """Calculate spectral centroid (center of mass)
     
     For a more detailed definition, see `peak_centroid`.
@@ -265,7 +265,7 @@ def spectral_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pc
         ret.append(w_e-w_s)
     return np.array(ret)
 
-def spectrum_raw(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,nfft:int=512) -> npt.NDArray[np.float_]:
+def spectrum_raw(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,nfft:int=512) -> npt.NDArray[np.float64]:
     """Calculate spectra of all input segments
 
     Args:
@@ -285,7 +285,7 @@ def spectrum_raw(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_
         ret.append(spect)
     return np.array(ret)
 
-def max_cwt(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
+def max_cwt(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal) -> tuple[npt.NDArray[np.float64],npt.NDArray[np.float64]]:
     """Calculate the maximum cwt coeffitient location in both directions
 
     Args:
@@ -308,7 +308,7 @@ def max_cwt(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signa
         freq.append(fr[loc[1]])
     return np.array(time),np.array(freq)
 
-def cwt_peakdist(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal, size:int=8) -> npt.NDArray[np.float_]:
+def cwt_peakdist(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal, size:int=8) -> npt.NDArray[np.float64]:
     """Calculate the distance of the largest two peaks in the continuous wavelet transform of the segment.
     
     Note:
@@ -341,7 +341,7 @@ def cwt_peakdist(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_
             ret.append(np.sqrt((max_x[0]-max_x[1])**2+(max_y[0]-max_y[1])**2))
     return np.array(ret)
 
-def dwt_intensity(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2) -> npt.NDArray[np.float_]:
+def dwt_intensity(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2) -> npt.NDArray[np.float64]:
     """Calculate the 'intensity' of discrete wavelet transform
 
     Args:
@@ -366,7 +366,7 @@ def dwt_intensity(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg
         ret.append(intens)
     return np.array(ret)
 
-def dwt_entropy(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2)  -> npt.NDArray[np.float_]:
+def dwt_entropy(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,wt_family:str="db6",decomp_level:int=4,select_level:int=2)  -> npt.NDArray[np.float64]:
     """Calculate Shannon entropy of selected discrete wavelet decomposition level
 
     Args:
@@ -391,7 +391,7 @@ def dwt_entropy(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_s
         ret.append(ent)
     return np.array(ret)
 
-def katz_fd(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal) -> npt.NDArray[np.float_]:
+def katz_fd(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal) -> npt.NDArray[np.float64]:
     """Calculate Katz fractal dimension
 
     Args:
@@ -421,7 +421,7 @@ def katz_fd(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signa
         ret.append(D)
     return np.array(ret)
 
-def lyapunov(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,dim:int=4,lag:int=3) -> npt.NDArray[np.float_]:
+def lyapunov(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,dim:int=4,lag:int=3) -> npt.NDArray[np.float64]:
     """Estimate Lyapunov exponent with nolds
     
     Note:
@@ -485,7 +485,7 @@ class feature_group:
         for config in configs:
             self.feature_configs.append(config)
 
-    def run(self, raw_sig: pcg_signal, env_sig: pcg_signal, starts: npt.NDArray[np.int_], ends: npt.NDArray[np.int_]) -> dict[str,npt.NDArray[np.float_]]:
+    def run(self, raw_sig: pcg_signal, env_sig: pcg_signal, starts: npt.NDArray[np.int_], ends: npt.NDArray[np.int_]) -> dict[str,npt.NDArray[np.float64]]:
         """Run feature calculations on the input signal based on the elements of feature_configs
 
         Args:

@@ -50,7 +50,7 @@ class LR_HSMM():
         self.hsmm_model = None
         self.lr_model = _LREmission()
 
-    def train_model(self,train_data:npt.NDArray[np.float_],train_s1_annot:(npt.NDArray[np.float_]|npt.NDArray[np.int_]),train_s2_annot:npt.NDArray[np.float_]) -> None:
+    def train_model(self,train_data:npt.NDArray[np.float64],train_s1_annot:(npt.NDArray[np.float64]|npt.NDArray[np.int_]),train_s2_annot:npt.NDArray[np.float64]) -> None:
         """Trains the model on the specified data with S1 and S2 location annotations 
 
         Args:
@@ -81,7 +81,7 @@ class LR_HSMM():
         self.lr_model = _LREmission(features.T, states)
         self.hsmm_model = HSMMModel(self.lr_model,durs,tmat)
 
-    def segment_single(self,sig:npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.float_]]:
+    def segment_single(self,sig:npt.NDArray[np.float64]) -> tuple[npt.NDArray[np.float64],npt.NDArray[np.float64]]:
         """Predicts the states for the given PCG signal
 
         Args:
@@ -92,7 +92,7 @@ class LR_HSMM():
         """
 
         henv, env, psd, wt = _generate_features(sig,self.signal_fs,self.feature_fs,self.bandpass_frq)
-        seg_features = np.array([henv, env, psd, wt], dtype=np.float_)
+        seg_features = np.array([henv, env, psd, wt], dtype=np.float64)
         if self.hsmm_model is None:
             warnings.warn("Attempting to segment with untrained model. Returning empty states...",RuntimeWarning)
             return np.empty(0), np.empty(0)

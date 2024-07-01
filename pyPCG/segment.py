@@ -5,7 +5,7 @@ import scipy.signal as sgnl
 from pyPCG import pcg_signal
 import pyPCG.lr_hsmm as lr_hsmm
 
-def adv_peak(signal: pcg_signal, percent_th:float=0.5) -> tuple[npt.NDArray[np.float_],npt.NDArray[np.int_]]:
+def adv_peak(signal: pcg_signal, percent_th:float=0.5) -> tuple[npt.NDArray[np.float64],npt.NDArray[np.int_]]:
     """Adaptive peak detection, based on local maxima and following value drop
 
     Args:
@@ -92,7 +92,7 @@ def load_hsmm(path:str) -> lr_hsmm.LR_HSMM:
     model.load_model(path)
     return model
 
-def segment_hsmm(model:lr_hsmm.LR_HSMM,signal:pcg_signal) -> npt.NDArray[np.float_]:
+def segment_hsmm(model:lr_hsmm.LR_HSMM,signal:pcg_signal) -> npt.NDArray[np.float64]:
     """Use a trained LR-HSMM model to segment a pcg signal
 
     Args:
@@ -123,7 +123,7 @@ heart_state.SYS.__doc__ = "Systole section"
 heart_state.DIA.__doc__ = "Diastole section"
 heart_state.unknown.__doc__ = "Default value, unknown state"
 
-def convert_hsmm_states(states: npt.NDArray[np.float_], state_id: int|heart_state) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.int_]]:
+def convert_hsmm_states(states: npt.NDArray[np.float64], state_id: int|heart_state) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.int_]]:
     """Convert selected LR-HSMM state to start and end times
 
     Args:

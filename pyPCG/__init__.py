@@ -39,7 +39,7 @@ class pcg_signal:
         >>> print(signal)
         PCG signal [60s 333Hz] ['File read in']
     """
-    def __init__(self, data:npt.NDArray[np.int_|np.float_], fs:int=1, log:list[str]|None=None) -> None:
+    def __init__(self, data:npt.NDArray[np.int_|np.float64], fs:int=1, log:list[str]|None=None) -> None:
         """Create PCG signal object
 
         Args:

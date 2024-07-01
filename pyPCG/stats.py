@@ -5,7 +5,7 @@ import scipy.stats as sts
 from scipy.special import erfcinv
 from typing import Callable, TypedDict
 
-def trim_transform(data: npt.NDArray[np.float_], trim_precent: float) -> npt.NDArray[np.float_]:
+def trim_transform(data: npt.NDArray[np.float64], trim_precent: float) -> npt.NDArray[np.float64]:
     """Trim the upper and lower percentage of values
 
     Args:
@@ -17,7 +17,7 @@ def trim_transform(data: npt.NDArray[np.float_], trim_precent: float) -> npt.NDA
     """
     return sts.trimboth(data,trim_precent/100)
 
-def outlier_remove_transform(data: npt.NDArray[np.float_], dist: float=3.0) -> npt.NDArray[np.float_]:
+def outlier_remove_transform(data: npt.NDArray[np.float64], dist: float=3.0) -> npt.NDArray[np.float64]:
     """Remove outliers based on the MAD (median of absolute differences)
 
     Args:
@@ -33,7 +33,7 @@ def outlier_remove_transform(data: npt.NDArray[np.float_], dist: float=3.0) -> n
     s = d/mdev if mdev else 0.
     return data[s<dist]
 
-def mean(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
+def mean(data: npt.NDArray[np.float64]) -> npt.NDArray[np.float64] | np.float64:
     """Calculate mean of inputs
 
     Args:
@@ -46,7 +46,7 @@ def mean(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
         return np.mean(data)
     else: return np.mean(data,axis=1)
 
-def std(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
+def std(data: npt.NDArray[np.float64]) -> npt.NDArray[np.float64] | np.float64:
     """Calculate standard deviation of inputs
 
     Args:
@@ -59,7 +59,7 @@ def std(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
         return np.std(data)
     else: return np.std(data,axis=1)
 
-def rms(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
+def rms(data: npt.NDArray[np.float64]) -> npt.NDArray[np.float64] | np.float64:
     """Calculate root mean square of inputs
 
     Args:
@@ -72,7 +72,7 @@ def rms(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
         return np.sqrt(np.mean(data**2))
     else: return np.sqrt(np.mean(data**2,axis=1))
 
-def med(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
+def med(data: npt.NDArray[np.float64]) -> npt.NDArray[np.float64] | np.float64:
     """Calculate median of inputs
 
     Args:
@@ -85,7 +85,7 @@ def med(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
         return np.median(data)
     else: return np.median(data,axis=1)
 
-def skew(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
+def skew(data: npt.NDArray[np.float64]) -> npt.NDArray[np.float64] | np.float64:
     """Calculate skewness of inputs
 
     Args:
@@ -98,7 +98,7 @@ def skew(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
         return sts.skew(data)
     else: return sts.skew(data,axis=1)
 
-def kurt(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
+def kurt(data: npt.NDArray[np.float64]) -> npt.NDArray[np.float64] | np.float64:
     """Calculate kurtosis of inputs
 
     Args:
@@ -111,7 +111,7 @@ def kurt(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
         return sts.kurtosis(data) #type: ignore
     else: return sts.kurtosis(data,axis=1) #type: ignore
 
-def max(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.float_:
+def max(data: npt.NDArray[np.float64],k: int=1) -> npt.NDArray[np.float64] | np.float64:
     """Get maximum values from input
 
     Args:
@@ -128,7 +128,7 @@ def max(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.fl
         ret=ret[0]
     return ret
 
-def min(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.float_:
+def min(data: npt.NDArray[np.float64],k: int=1) -> npt.NDArray[np.float64] | np.float64:
     """Get minimum values from input
 
     Args:
@@ -144,7 +144,7 @@ def min(data: npt.NDArray[np.float_],k: int=1) -> npt.NDArray[np.float_] | np.fl
         ret=ret[0]
     return ret
 
-def percentile(data: npt.NDArray[np.float_], perc: float=25) -> npt.NDArray[np.float_] | np.float_:
+def percentile(data: npt.NDArray[np.float64], perc: float=25) -> npt.NDArray[np.float64] | np.float64:
     """Calculate given percentile of inputs
 
     Args:
@@ -158,7 +158,7 @@ def percentile(data: npt.NDArray[np.float_], perc: float=25) -> npt.NDArray[np.f
         return np.percentile(data,perc)
     else: return np.percentile(data,perc,axis=1)
 
-def window_operator(data: npt.NDArray[np.float_],win_size: int,fun: Callable,overlap_percent: float=0.5) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.float_]]:
+def window_operator(data: npt.NDArray[np.float64],win_size: int,fun: Callable,overlap_percent: float=0.5) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.float64]]:
     """Apply given statistical function over a sliding window on the input
 
     Args:
@@ -177,7 +177,7 @@ def window_operator(data: npt.NDArray[np.float_],win_size: int,fun: Callable,ove
         loc.append(i)
     return np.array(loc), np.array(val)
 
-def iqr(data: npt.NDArray[np.float_]) -> npt.NDArray[np.float_] | np.float_:
+def iqr(data: npt.NDArray[np.float64]) -> npt.NDArray[np.float64] | np.float64:
     """Calculate interquartile range
 
     Args:
@@ -248,7 +248,7 @@ class stats_group:
                 temp["Segment"].append(segment)
         self.dataframe = pd.DataFrame(temp)
 
-    def run(self,ftr_dict: dict[str,npt.NDArray[np.float_]]) -> dict[str,list[float]]:
+    def run(self,ftr_dict: dict[str,npt.NDArray[np.float64]]) -> dict[str,list[float]]:
         """Run the statistic calculation based on configuration
 
         Args:
@@ -276,7 +276,7 @@ class stats_group:
         self.signal_stats[segment] = stats
         self._update_df()
     
-    def calc_group_stats(self,total_ftr_dict: dict[str,dict[str,npt.NDArray[np.float_]]]):
+    def calc_group_stats(self,total_ftr_dict: dict[str,dict[str,npt.NDArray[np.float64]]]):
         """Calculate all stats on all given features and segments
 
         Args:
@@ -297,7 +297,7 @@ class stats_group:
                 sub = self.dataframe[self.dataframe["Segment"]==segment][self.dataframe.columns.difference(["Segment"],sort=False)]
                 sub.to_excel(excel_writer=writer,sheet_name=segment,index=False)
 
-def calc_group_stats(ftr_dict: dict[str,dict[str,npt.NDArray[np.float_]]], *configs: tuple[Callable,str]) -> dict[str,list[float]]:
+def calc_group_stats(ftr_dict: dict[str,dict[str,npt.NDArray[np.float64]]], *configs: tuple[Callable,str]) -> dict[str,list[float]]:
     """Calculate the same statistics for different segments and their features
 
     Args:
