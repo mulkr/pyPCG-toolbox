@@ -8,3 +8,4 @@ hsmmlearn @ git+https://github.com/jvkersch/hsmmlearn@master
 emd>=0.6.2
 nolds>=0.5.2
 tqdm>=4.64.1
+pyQt5>=5.15.7
