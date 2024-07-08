@@ -1,0 +1,4 @@
+Sphinx>=7.2.6
+sphinx-toolbox>=3.5.0
+enum-tools>=0.11.0
+sphinx-rtd-theme>=2.0.0
