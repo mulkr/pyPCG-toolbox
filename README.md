@@ -4,6 +4,7 @@ Common processing algorithms and segmemtation for PCG signals
 
 ## Installation
 **Important:** Python 3.10 is supported but 3.11 is recommended
+
 Clone the git repository
 ```
 git clone https://dev.itk.ppke.hu/m.kristof-phd/pypcg-toolbox.git
