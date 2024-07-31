@@ -89,20 +89,29 @@ def peak_spread(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: 
         factor (float, optional): percentage of total area. Defaults to 0.7.
 
     Returns:
-        np.ndarray: time difference between the beginning and end of the percentage area
+        np.ndarray: time difference between the beginning and end of the percentage area in ms
     """
     start, end = _check_start_end(start,end)
     ret = []
     for s, e in zip(start, end):
         win = envelope.data[s:e]
         th = np.sum(win)*factor
-        vals = np.sort(win*-1)*-1
-        for val in vals:
-            filt = win>val
-            if np.sum(win[filt])>=th:
-                idx = np.nonzero(filt)[0]
-                ret.append(idx[-1]-idx[0])
+        grow_left = True
+        offset_left, offset_right = 0, 0
+        peak = np.argmax(win)
+        for _ in win:
+            if np.sum(win[peak-offset_left:peak+offset_right])>=th:
                 break
+            if grow_left and peak-offset_left>0:
+                offset_left += 1
+                grow_left = not grow_left
+                continue
+            elif not grow_left and peak+offset_right<len(win)-2:
+                offset_right += 1
+                grow_left = not grow_left
+                continue
+        spread = offset_right-offset_left
+        ret.append(spread/envelope.fs * 1000)
     return np.array(ret)
 
 def peak_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: pcg_signal) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.float64]]:
@@ -118,10 +127,9 @@ def peak_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope
         np.ndarray: envelope values at centroid
     """
     start, end = _check_start_end(start,end)
-    power = envelope.data**2
     loc, val = [], []
     for s, e in zip(start,end):
-        win = power[s:e]
+        win = envelope.data[s:e]
         th = np.sum(win)*0.5 #type: ignore
         centr = np.nonzero(np.cumsum(win)>th)[0][0]
         loc.append(centr)
@@ -138,19 +146,20 @@ def peak_width(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],envelope: p
         factor (float, optional): proportionality factor. Defaults to 0.7.
 
     Returns:
-        np.ndarray: peak width in samples
+        np.ndarray: peak width in ms
     """
     start, end = _check_start_end(start,end)
     ret = []
     for s,e in zip(start,end):
-        loc = np.argmax(envelope.data[s:e])+s
-        val = envelope.data[loc]
-        th = val*factor
-        w_prev = np.nonzero(envelope.data[:loc]<th)[0]
-        w_next = np.nonzero(envelope.data[loc:]<th)[0]
+        win = envelope.data[s:e]
+        loc = np.argmax(win)
+        th = win[loc]*factor
+        w_prev = np.nonzero(win[:loc]<th)[0]
+        w_next = np.nonzero(win[loc:]<th)[0]
         w_s = w_prev[-1] if len(w_prev)!=0 else 0
         w_e = w_next[0]+loc if len(w_next)!=0 else e-s
-        ret.append(w_e-w_s)
+        width = w_e-w_s
+        ret.append(width/envelope.fs * 1000)
     return np.array(ret)
 
 def max_freq(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float64],npt.NDArray[np.float64]]:
@@ -198,13 +207,22 @@ def spectral_spread(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: p
         spect = spect[:nfft//2]
         power = spect**2
         th = np.sum(power)*factor
-        vals = np.sort(power*-1)*-1
-        for val in vals:
-            filt = power>val
-            if np.sum(power[filt])>=th:
-                idx = np.nonzero(filt)[0]
-                ret.append(idx[-1]-idx[0])
+        grow_left = True
+        offset_left, offset_right = 0, 0
+        peak = np.argmax(power)
+        for _ in power:
+            if np.sum(power[peak-offset_left:peak+offset_right])>=th:
                 break
+            if grow_left and peak-offset_left>0:
+                offset_left += 1
+                grow_left = not grow_left
+                continue
+            elif not grow_left and peak+offset_right<len(power)-2:
+                offset_right += 1
+                grow_left = not grow_left
+                continue
+        spread = offset_right-offset_left
+        ret.append(spread)
     return np.array(ret)
 
 def spectral_centroid(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_signal,nfft: int=512) -> tuple[npt.NDArray[np.float64],npt.NDArray[np.float64]]:
