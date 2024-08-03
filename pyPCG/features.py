@@ -380,7 +380,7 @@ def dwt_intensity(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg
     scale = 2**select_level
     for s,e in zip(start,end):
         win = select[s//scale:e//scale]
-        intens = np.sqrt(np.sum(win**2))
+        intens = np.sqrt(np.mean(win**2))
         ret.append(intens)
     return np.array(ret)
 
@@ -405,7 +405,7 @@ def dwt_entropy(start: npt.NDArray[np.int_],end: npt.NDArray[np.int_],sig: pcg_s
     scale = 2**select_level
     for s,e in zip(start,end):
         win = select[s//scale:e//scale]
-        ent = np.sqrt(-np.sum(win**2*np.log2(win**2)))
+        ent = -np.sum(win**2*np.log2(win**2))
         ret.append(ent)
     return np.array(ret)
 
