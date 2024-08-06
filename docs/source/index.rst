@@ -2,9 +2,9 @@ Welcome to pyPCG's documentation!
 =================================
 A signal processing toolbox for processing phonocardiography (PCG) data. Including support for multiple data formats, segmentation based on envelope peak detection, and Markov model based methods, feature extraction, and statistics calculation.
 
-Current version: 0.1-alpha
+Current version: 0.1-beta
 
-Planned release: soon
+Planned release: August 2024
 
 Introduction
 ------------

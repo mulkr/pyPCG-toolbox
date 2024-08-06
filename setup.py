@@ -8,14 +8,14 @@ with open("requirements.txt", "r") as f:
 
 setup(
     name="pyPCG_toolbox",
-    version="0.1-a",
+    version="0.1-b",
     description="A PCG processing toolbox",
-    author="Kristóf Müller",
+    author="Kristóf Müller, Janka Hatvani, Miklós Koller, Márton Áron Goda",
     author_email="muller.kristof@itk.ppke.hu",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://dev.itk.ppke.hu/m.kristof-phd/pypcg-toolbox",
-    project_urls={"Bug Tracker": "https://dev.itk.ppke.hu/m.kristof-phd/pypcg-toolbox/-/issues",},
+    url="https://github.com/mulkr/pyPCG-toolbox/",
+    project_urls={"Bug Tracker": "https://github.com/mulkr/pyPCG-toolbox/issues",},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU Affero General Public License v3",
