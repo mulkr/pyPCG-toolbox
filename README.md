@@ -1,5 +1,4 @@
 # pyPCG toolbox
-## Kristóf Müller (muller.kristof@itk.ppke.hu)
 Common processing algorithms and segmemtation for PCG signals
 
 ## Installation
@@ -7,11 +6,11 @@ Common processing algorithms and segmemtation for PCG signals
 
 Clone the git repository
 ```
-git clone https://dev.itk.ppke.hu/m.kristof-phd/pypcg-toolbox.git
+git clone https://github.com/mulkr/pyPCG-toolbox.git
 ```
 Change directory to the cloned repository
 ```
-cd pypcg-tooblox
+cd pyPCG-tooblox
 ```
 Install with pip
 ```
@@ -34,3 +33,6 @@ On Windows you can also run the `make.bat` file
 
 The documentation should be available in the `docs/build` directory as html files<br>
 This includes the example codes as tutorials
+
+## Correspondence
+Kristóf Müller (muller.kristof@itk.ppke.hu)
