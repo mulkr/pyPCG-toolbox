@@ -3,9 +3,6 @@ from setuptools import setup
 with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
-with open("requirements.txt", "r") as f:
-    required = f.read().splitlines()
-
 setup(
     name="pyPCG_toolbox",
     version="0.1-b",
@@ -22,6 +19,16 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=["pyPCG"],
-    install_requires=[required],
+    install_requires=[  "scikit-learn>=1.1.3",
+                        "scipy>=1.9.3",
+                        "PyWavelets>=1.5.0",
+                        "pandas>=2.0.0",
+                        "matplotlib>=3.6.2",
+                        "numpy>=1.25.2",
+                        "hsmmlearn @ git+https://github.com/jvkersch/hsmmlearn@master",
+                        "emd>=0.6.2",
+                        "nolds>=0.5.2",
+                        "tqdm>=4.64.1",
+                        "pyQt5>=5.15.7"],
     python_requires=">=3.10"
 )
