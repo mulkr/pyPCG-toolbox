@@ -51,5 +51,5 @@ The documentation should be available in the `docs/build` directory as html file
 This includes the example codes as tutorials
 
 ## Correspondence
-Kristóf Müller (muller.kristof@itk.ppke.hu)
+Kristóf Müller (muller.kristof@itk.ppke.hu)<br>
 Márton Áron Goda (goda.marton.aron@itk.ppke.hu)

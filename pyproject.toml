@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyPCG_toolbox"
-version = "0.1-b"
+version = "0.1b2"
 authors = [
   { name="Kristóf Müller", email="muller.kristof@itk.ppke.hu" },
   { name="Janka Hatvani"},
   { name="Miklós Koller"},
-  { name="Márton Áron Goda"},
+  { name="Márton Áron Goda", email="goda.marton.aron@itk.ppke.hu"},
 ]
 description = "A PCG processing toolbox"
 readme = {file = "README.md", content-type = "text/markdown"}

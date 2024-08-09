@@ -5,10 +5,10 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="pyPCG_toolbox",
-    version="0.1-b",
+    version="0.1b2",
     description="A PCG processing toolbox",
     author="Kristóf Müller, Janka Hatvani, Miklós Koller, Márton Áron Goda",
-    author_email="muller.kristof@itk.ppke.hu",
+    author_email="muller.kristof@itk.ppke.hu, goda.marton.aron@itk.ppke.hu",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/mulkr/pyPCG-toolbox/",
