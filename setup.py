@@ -1,7 +1,8 @@
 from setuptools import setup
 
-with open("README.md", "r", encoding="utf-8") as f:
-    long_description = f.read()
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="pyPCG_toolbox",
@@ -14,9 +15,11 @@ setup(
     url="https://github.com/mulkr/pyPCG-toolbox/",
     project_urls={"Bug Tracker": "https://github.com/mulkr/pyPCG-toolbox/issues",},
     classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GNU Affero General Public License v3",
+        "Development Status :: 4 - Beta",
+        "Programming Language :: Python :: 3.10",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
+        "Topic :: Scientific/Engineering"
     ],
     packages=["pyPCG"],
     install_requires=[  "scikit-learn>=1.1.3",

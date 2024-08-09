@@ -2,19 +2,22 @@
 Common processing algorithms and segmemtation for PCG signals
 
 ## Installation
-**Important:** Python 3.10 is supported but 3.11 is recommended
+**IMPORTANT!**
 
-### From PyPi
 pyPCG is dependent on a package `hsmmlearn` which is currently not available on PyPi.
 
 To solve this issue, install `hsmmlearn` separately from https://github.com/jvkersch/hsmmlearn
+```
+pip install git+https://github.com/jvkersch/hsmmlearn@master
+```
+*Note:* Python 3.10 is supported but 3.11 is recommended
 
-Then install `pyPCG` using pip
+### From PyPi
+Install `pyPCG` using pip
 
 ```
-pip install pyPCG
+pip install pyPCG_toolbox
 ```
-
 
 ### From source
 Clone the git repository
@@ -49,3 +52,4 @@ This includes the example codes as tutorials
 
 ## Correspondence
 Kristóf Müller (muller.kristof@itk.ppke.hu)
+Márton Áron Goda (goda.marton.aron@itk.ppke.hu)
