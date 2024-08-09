@@ -12,12 +12,16 @@ authors = [
   { name="Márton Áron Goda"},
 ]
 description = "A PCG processing toolbox"
-readme = "README.md"
+readme = {file = "README.txt", content-type = "text/markdown"}
+license = {file = "LICENSE"}
 requires-python = ">=3.10"
+
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: GPL-3.0-only",
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering"
 ]
 dependencies = [
   "scikit-learn>=1.1.3",
@@ -32,6 +36,12 @@ dependencies = [
   "tqdm>=4.64.1",
   "pyQt5>=5.15.7"
 ]
+
+[project.urls]
+Homepage = "https://github.com/mulkr/pyPCG-toolbox/"
+Documentation = "https://pypcg-toolbox.readthedocs.io/en/latest/"
+Repository = "https://github.com/mulkr/pyPCG-toolbox.git"
+Issues = "https://github.com/mulkr/pyPCG-toolbox/issues"
 
 [tool.setuptools]
 packages = ["pyPCG"]
