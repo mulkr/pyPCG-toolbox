@@ -1,7 +1,7 @@
 project = 'pyPCG'
 copyright = '2024, Kristóf Müller'
 author = 'Kristóf Müller'
-release = '0.1-a'
+release = '0.1b2'
 
 extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon','sphinx_toolbox.more_autodoc.autotypeddict','enum_tools.autoenum']
 templates_path = ['_templates']
