@@ -50,6 +50,7 @@ The modules implement the following steps:
    lr_hsmm
    features
    stats
+   validation
    :maxdepth: 2
    :caption: Contents:
 

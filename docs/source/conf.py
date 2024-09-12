@@ -3,12 +3,21 @@ copyright = '2024, Kristóf Müller'
 author = 'Kristóf Müller'
 release = '0.1b2'
 
-extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon','sphinx_toolbox.more_autodoc.autotypeddict','enum_tools.autoenum']
+extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon','sphinx.ext.viewcode','sphinx_toolbox.more_autodoc.autotypeddict','enum_tools.autoenum']
 templates_path = ['_templates']
 exclude_patterns = []
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+
+html_context = {
+    "display_github": True
+}
+
+html_theme_options = {
+    'logo_only': False,
+    'vcs_pageview_mode': ''
+}
 
 import os
 if os.environ.get('READTHEDOCS', None) == 'True':
