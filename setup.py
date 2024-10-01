@@ -1,11 +1,15 @@
 from setuptools import setup
+import tomllib
 
 with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
+def get_version():
+    return tomllib.load(open('pyproject.toml', 'rb'))['project']['version']
+
 setup(
     name="pyPCG_toolbox",
-    version="0.1b2",
+    version=get_version(),
     description="A PCG processing toolbox",
     author="Kristóf Müller, Janka Hatvani, Miklós Koller, Márton Áron Goda",
     author_email="muller.kristof@itk.ppke.hu, goda.marton.aron@itk.ppke.hu",

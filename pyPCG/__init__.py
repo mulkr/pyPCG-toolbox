@@ -1,9 +1,10 @@
+import importlib.metadata
 import numpy as np
 import numpy.typing as npt
 import matplotlib.pyplot as plt
 import copy
 
-__version__ = "0.1-a"
+__version__ = importlib.metadata.version("pyPCG_toolbox")
 
 class pcg_signal:
     """PCG signal object. This is used to store the signal data, as well as its sampling rate. The object also includes a processing log to track the processing steps and settings done to the signal.
