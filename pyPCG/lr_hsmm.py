@@ -16,6 +16,7 @@ from sklearn.linear_model import LogisticRegression
 from hsmmlearn.emissions import AbstractEmissions
 from hsmmlearn.hsmm import HSMMModel
 from scipy.stats import norm
+from joblib import Parallel, delayed
 
 INF = 999999999
 
@@ -50,7 +51,7 @@ class LR_HSMM():
         self.hsmm_model = None
         self.lr_model = _LREmission()
 
-    def train_model(self,train_data:npt.NDArray[np.float64],train_s1_annot:(npt.NDArray[np.float64]|npt.NDArray[np.int_]),train_s2_annot:npt.NDArray[np.float64]) -> None:
+    def train_model(self,train_data:npt.NDArray[np.float64],train_s1_annot:(npt.NDArray[np.float64]|npt.NDArray[np.int_]),train_s2_annot:npt.NDArray[np.float64],multiprocess:int|None=None) -> None:
         """Trains the model on the specified data with S1 and S2 location annotations 
 
         Args:
@@ -64,15 +65,22 @@ class LR_HSMM():
         f_henv, f_env, f_psd, f_wt = np.array([]),np.array([]),np.array([]),np.array([])
         d_hr, d_sys = np.array([]),np.array([])
         print("Generating features...")
-        for i,(data,s1_annot,s2_annot) in enumerate(zip(train_data,train_s1_annot,train_s2_annot)):
-            hr, sys = _get_hr_sys(data,self.signal_fs,self.bandpass_frq,self.expected_hr_range[0],self.expected_hr_range[1])
-            sts = _generate_states(data,s1_annot,s2_annot,self.signal_fs,self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
-            henv, env, psd, wt = _generate_features(data,self.signal_fs,self.feature_fs,self.bandpass_frq)
-            states = np.append(states,sts)
+        if multiprocess is not None:
+            henv, env, psd, wt = Parallel(n_jobs=multiprocess)(delayed(_generate_features)(data,self.signal_fs,self.feature_fs,self.bandpass_frq) for data in train_data) #type: ignore
             f_henv = np.append(f_henv,henv)
             f_env = np.append(f_env,env)
             f_psd = np.append(f_psd,psd)
             f_wt = np.append(f_wt,wt)
+        for i,(data,s1_annot,s2_annot) in enumerate(zip(train_data,train_s1_annot,train_s2_annot)):
+            hr, sys = _get_hr_sys(data,self.signal_fs,self.bandpass_frq,self.expected_hr_range[0],self.expected_hr_range[1])
+            sts = _generate_states(data,s1_annot,s2_annot,self.signal_fs,self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
+            if multiprocess is None:
+                henv, env, psd, wt = _generate_features(data,self.signal_fs,self.feature_fs,self.bandpass_frq)
+                f_henv = np.append(f_henv,henv)
+                f_env = np.append(f_env,env)
+                f_psd = np.append(f_psd,psd)
+                f_wt = np.append(f_wt,wt)
+            states = np.append(states,sts)
             d_hr = np.append(d_hr,hr)
             d_sys = np.append(d_sys,sys)
         features = np.array([f_henv,f_env,f_psd,f_wt])
