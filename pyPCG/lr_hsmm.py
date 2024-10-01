@@ -170,10 +170,14 @@ class _LREmission(AbstractEmissions):
         s2_train[states != 3] = 1
         sys_train[states != 2] = 1
         dia_train[states != 4] = 1
-
+        
+        print("Training S1 LR...")
         self.LRmodel_s1 = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,s1_train)
+        print("Training S2 LR...")
         self.LRmodel_s2 = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,s2_train)
+        print("Training sys LR...")
         self.LRmodel_sys = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,sys_train)
+        print("Training dia LR...")
         self.LRmodel_dia = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,dia_train)
         self.predictors = [self.LRmodel_s1,self.LRmodel_sys,self.LRmodel_s2,self.LRmodel_dia]
 
@@ -283,22 +287,22 @@ def _generate_features(sig,sig_fs,f_fs,preproc=(25,400)):
     psd = _normalize(_psd_feature(rem_sig,sig_fs))
     wt = _normalize(_wt_feature(rem_sig))
 
-    d_h_env = sgn.resample_poly(h_env,sig_fs,f_fs)
-    d_env = sgn.resample_poly(env,sig_fs,f_fs)
-    d_psd = sgn.resample_poly(psd,sig_fs,f_fs)
-    d_wt = sgn.resample_poly(wt,sig_fs,f_fs)
+    d_h_env = sgn.resample_poly(h_env,f_fs,sig_fs)
+    d_env = sgn.resample_poly(env,f_fs,sig_fs)
+    d_psd = sgn.resample_poly(psd,f_fs,sig_fs)
+    d_wt = sgn.resample_poly(wt,f_fs,sig_fs)
 
     return d_h_env,d_env,d_psd,d_wt
 
 def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22):
     henv = _h_envelope_feature(sig,sig_fs)
-    env = sgn.resample_poly(henv,sig_fs,f_fs)
+    env = sgn.resample_poly(henv,f_fs,sig_fs)
     states = np.zeros_like(env)
     ms_scale = sig_fs/1000
     fs_scale = sig_fs/f_fs
     scale = f_fs/1000
-    as1 = np.round(np.array(annot_s1)*scale).astype(int) # *ms_scale/fs_scale
-    as2 = np.round(np.array(annot_s2)*scale).astype(int)
+    as1 = np.round(np.array(annot_s1)*f_fs).astype(int) # *ms_scale/fs_scale
+    as2 = np.round(np.array(annot_s2)*f_fs).astype(int)
     ms1 = round(mean_s1*scale)
     ms2 = round(mean_s2*scale)
     ss1 = round(std_s1*scale)
@@ -306,6 +310,8 @@ def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,st
     for s1 in as1:
         upper_s1 = min(len(states)-1,s1+ms1+ss1) # +std_s1
         lower_s1 = max(1,s1-ms1-ss1)
+        if lower_s1>upper_s1:
+            continue
         search = env[lower_s1:upper_s1]
         s1_ind = np.argmax(search)
         s1_ind = min(len(states)-1,lower_s1+s1_ind) #type: ignore
@@ -316,6 +322,8 @@ def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,st
     for s2 in as2:
         upper_s2 = min(len(states)-1,s2+ms2+ss2)
         lower_s2 = max(0,s2-ms2-ss2)
+        if lower_s2>upper_s2:
+            continue
         search = env[lower_s2:upper_s2]*(1-states[lower_s2:upper_s2])
         s2_ind = np.argmax(search)
         s2_ind = min(len(states)-1,lower_s2+s2_ind) #type: ignore
@@ -332,20 +340,22 @@ def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,st
             end_pos = len(states)-1
         else:
             end_pos = s1_labels[np.argmin(diffs)]
-        states[ceil(s2_ind+(ms2/2)):end_pos] = states[ceil(s2_ind+(ms2/2)):end_pos]+4 #type: ignore
+        states[ceil(s2_ind+(ms2/2)):end_pos] = 4
 
-    first_definite = np.nonzero(states)[0][0]
-    if first_definite > 0:
-        if states[first_definite+1] == 1:
-            states[0:first_definite] = 4
-        if states[first_definite+1] == 3:
-            states[0:first_definite] = 2
-    last_definite = np.nonzero(np.array(states))[0][-1]
-    if last_definite > 0:
-        if states[last_definite] == 1:
-            states[last_definite:] = 2
-        if states[last_definite] == 3:
-            states[last_definite:] = 4
+    empty_states = np.nonzero(states)[0]
+    if len(empty_states)>0:
+        first_definite = empty_states[0]
+        if first_definite > 0:
+            if states[first_definite+1] == 1:
+                states[0:first_definite] = 4
+            if states[first_definite+1] == 3:
+                states[0:first_definite] = 2
+        last_definite = empty_states[-1]
+        if last_definite > 0:
+            if states[last_definite] == 1:
+                states[last_definite:] = 2
+            if states[last_definite] == 3:
+                states[last_definite:] = 4
 
     states[states==0] = 2
     return states
