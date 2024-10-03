@@ -66,12 +66,16 @@ class LR_HSMM():
         d_hr, d_sys = np.array([]),np.array([])
         print("Generating features...")
         if multiprocess is not None:
-            result = Parallel(n_jobs=multiprocess)(delayed(_generate_features)(data,self.signal_fs,self.feature_fs,self.bandpass_frq) for data in train_data) #type: ignore
+            result = Parallel(n_jobs=multiprocess,backend="multiprocessing")(delayed(_generate_features)(data,self.signal_fs,self.feature_fs,self.bandpass_frq) for data in train_data) #type: ignore
             henv, env, psd, wt = zip(*result)
-            f_henv = np.append(f_henv,henv)
-            f_env = np.append(f_env,env)
-            f_psd = np.append(f_psd,psd)
-            f_wt = np.append(f_wt,wt)
+            for f in henv:
+                f_henv = np.append(f_henv,f)
+            for f in env:
+                f_env = np.append(f_env,f)
+            for f in psd:
+                f_psd = np.append(f_psd,f)
+            for f in wt:
+                f_wt = np.append(f_wt,f)
         for i,(data,s1_annot,s2_annot) in enumerate(zip(train_data,train_s1_annot,train_s2_annot)):
             hr, sys = _get_hr_sys(data,self.signal_fs,self.bandpass_frq,self.expected_hr_range[0],self.expected_hr_range[1])
             sts = _generate_states(data,s1_annot,s2_annot,self.signal_fs,self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
@@ -85,6 +89,7 @@ class LR_HSMM():
             d_hr = np.append(d_hr,hr)
             d_sys = np.append(d_sys,sys)
         features = np.array([f_henv,f_env,f_psd,f_wt])
+        print(features.shape)
         durs = _get_duration_distributions(np.mean(d_hr),np.mean(d_sys),self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
         print("Training model...")
         self.lr_model = _LREmission(features.T, states)
@@ -301,7 +306,7 @@ def _generate_features(sig,sig_fs,f_fs,preproc=(25,400)):
     d_psd = sgn.resample_poly(psd,f_fs,sig_fs)
     d_wt = sgn.resample_poly(wt,f_fs,sig_fs)
 
-    return d_h_env,d_env,d_psd,d_wt
+    return np.array(d_h_env),np.array(d_env),np.array(d_psd),np.array(d_wt)
 
 def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22):
     henv = _h_envelope_feature(sig,sig_fs)
