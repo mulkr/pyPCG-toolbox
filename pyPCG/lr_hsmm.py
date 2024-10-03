@@ -66,7 +66,8 @@ class LR_HSMM():
         d_hr, d_sys = np.array([]),np.array([])
         print("Generating features...")
         if multiprocess is not None:
-            henv, env, psd, wt = Parallel(n_jobs=multiprocess)(delayed(_generate_features)(data,self.signal_fs,self.feature_fs,self.bandpass_frq) for data in train_data) #type: ignore
+            result = Parallel(n_jobs=multiprocess)(delayed(_generate_features)(data,self.signal_fs,self.feature_fs,self.bandpass_frq) for data in train_data) #type: ignore
+            henv, env, psd, wt = zip(*result)
             f_henv = np.append(f_henv,henv)
             f_env = np.append(f_env,env)
             f_psd = np.append(f_psd,psd)
