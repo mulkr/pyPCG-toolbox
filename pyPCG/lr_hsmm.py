@@ -297,12 +297,12 @@ def _spike_removal(sig,sig_fs):
                 framenum = framenum[1]
         pos = np.argmax(np.abs(frames[:,framenum]))
         zerocross = np.where(np.abs(np.diff(np.sign(frames[:,framenum])))>0)[0]
-        find = np.nonzero(zerocross)[0]
-        if len(find)>0:
-            last = np.nonzero(zerocross[0:pos])[0][-1]
+        find = (np.nonzero(zerocross)[0],np.nonzero(zerocross[0:pos])[0])
+        if len(find[0])>0 and len(find[1])>0 :
+            last = find[1][-1]
             start = max(1,last)
             zerocross[0:pos] = 0
-            end = min(find[0],window_s)
+            end = min(find[0][0],window_s)
             frames[start:end,framenum] = 0.0001
         MAAs = np.max(np.abs(frames),axis=0)
     removed = np.reshape(frames,(-1,1))
@@ -323,6 +323,7 @@ def _generate_features(sig,sig_fs,f_fs,preproc=(25,400)):
     d_env = _normalize(sgn.resample_poly(env,f_fs,sig_fs))
     d_psd = _normalize(sgn.resample_poly(psd,f_fs,sig_fs))
     d_wt = _normalize(sgn.resample_poly(wt,f_fs,sig_fs))
+    # d_wt = np.roll(d_wt,3) #temp hack
 
     return np.array(d_h_env),np.array(d_env),np.array(d_psd),np.array(d_wt)
 
