@@ -297,11 +297,11 @@ def _spike_removal(sig,sig_fs):
                 framenum = framenum[1]
         pos = np.argmax(np.abs(frames[:,framenum]))
         zerocross = np.where(np.abs(np.diff(np.sign(frames[:,framenum])))>0)[0]
-        last = np.nonzero(zerocross[0:pos])[0][-1]
-        start = max(1,last)
-        zerocross[0:pos] = 0
         find = np.nonzero(zerocross)[0]
         if len(find)>0:
+            last = np.nonzero(zerocross[0:pos])[0][-1]
+            start = max(1,last)
+            zerocross[0:pos] = 0
             end = min(find[0],window_s)
             frames[start:end,framenum] = 0.0001
         MAAs = np.max(np.abs(frames),axis=0)
