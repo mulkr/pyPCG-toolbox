@@ -300,8 +300,10 @@ def _spike_removal(sig,sig_fs):
         last = np.nonzero(zerocross[0:pos])[0][-1]
         start = max(1,last)
         zerocross[0:pos] = 0
-        end = min(np.nonzero(zerocross)[0][0],window_s)
-        frames[start:end,framenum] = 0.0001
+        find = np.nonzero(zerocross)[0]
+        if len(find)>0:
+            end = min(find[0],window_s)
+            frames[start:end,framenum] = 0.0001
         MAAs = np.max(np.abs(frames),axis=0)
     removed = np.reshape(frames,(-1,1))
     removed = np.append(removed,sig[len(removed):])
