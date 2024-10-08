@@ -89,7 +89,6 @@ class LR_HSMM():
             d_hr = np.append(d_hr,hr)
             d_sys = np.append(d_sys,sys)
         features = np.array([f_henv,f_env,f_psd,f_wt])
-        print(features.shape)
         durs = _get_duration_distributions(np.mean(d_hr),np.mean(d_sys),self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
         print("Training model...")
         self.lr_model = _LREmission(features.T, states)
@@ -184,7 +183,7 @@ class _LREmission(AbstractEmissions):
         s2_train[states != 3] = 1
         sys_train[states != 2] = 1
         dia_train[states != 4] = 1
-        
+
         print("Training S1 LR...")
         self.LRmodel_s1 = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,s1_train)
         print("Training S2 LR...")
@@ -193,7 +192,7 @@ class _LREmission(AbstractEmissions):
         self.LRmodel_sys = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,sys_train)
         print("Training dia LR...")
         self.LRmodel_dia = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,dia_train)
-        self.predictors = [self.LRmodel_s1,self.LRmodel_sys,self.LRmodel_s2,self.LRmodel_dia]
+        self.predictors = [self.LRmodel_s1,self.LRmodel_sys,self.LRmodel_s2,self.LRmodel_dia] #TODO: possible to replace with a single LR predictor
 
     def likelihood(self, obs):
         l_s1 = self.LRmodel_s1.predict_proba(obs)[:,0]
@@ -232,7 +231,7 @@ def _envelope_feature(sig):
 
 def _h_envelope_feature(sig,sig_fs):
     env = _envelope_feature(sig)
-    lp = sgn.butter(6,8,output='sos',fs=sig_fs,btype='lowpass')
+    lp = sgn.butter(1,8,output='sos',fs=sig_fs,btype='lowpass')
     filt = np.exp(sgn.sosfiltfilt(lp,np.log(env)))
     filt[0] = filt[1] #?
     return filt
@@ -243,7 +242,7 @@ def _psd_feature(sig,sig_fs):
     [f,_,Zxx] = sgn.stft(sig,fs=sig_fs,window="hamming",nperseg=sig_fs//40,scaling="psd",nfft=1024)
     lo_pos = np.argmin(np.abs(f-f_lo))
     hi_pos = np.argmin(np.abs(f-f_hi))
-    psd = np.mean(np.abs(Zxx[lo_pos:hi_pos,:]),axis=0)
+    psd = np.mean(np.abs(Zxx[lo_pos:hi_pos,:])**2,axis=0)
     psd_re = sgn.resample_poly(psd,len(sig),len(psd))
     return psd_re
 
@@ -272,6 +271,8 @@ def _spike_removal(sig,sig_fs):
     trailing = len(sig) % window_s
     frames = np.reshape(sig[:-trailing],(window_s,-1))
     MAAs = np.max(np.abs(frames),axis=0)
+    if len(MAAs) == 0:
+        return sig
     while(np.count_nonzero(MAAs>np.median(MAAs)*3)>0):
         # val = np.max(MAAs,axis=1)
         framenum = np.argmax(MAAs,axis=0)
@@ -293,18 +294,17 @@ def _spike_removal(sig,sig_fs):
 def _generate_features(sig,sig_fs,f_fs,preproc=(25,400)):
     bpf = sgn.butter(4,preproc,"bandpass",output="sos",fs=sig_fs)
     f_sig = sgn.sosfiltfilt(bpf,sig)
-    # rem_sig = _spike_removal(f_sig,sig_fs)
-    rem_sig = f_sig
+    rem_sig = _spike_removal(f_sig,sig_fs)
 
-    h_env = _normalize(_h_envelope_feature(rem_sig,sig_fs))
-    env = _normalize(_envelope_feature(rem_sig))
-    psd = _normalize(_psd_feature(rem_sig,sig_fs))
-    wt = _normalize(_wt_feature(rem_sig))
+    h_env = _h_envelope_feature(rem_sig,sig_fs)
+    env = _envelope_feature(rem_sig)
+    psd = _psd_feature(rem_sig,sig_fs)
+    wt = _wt_feature(rem_sig)
 
-    d_h_env = sgn.resample_poly(h_env,f_fs,sig_fs)
-    d_env = sgn.resample_poly(env,f_fs,sig_fs)
-    d_psd = sgn.resample_poly(psd,f_fs,sig_fs)
-    d_wt = sgn.resample_poly(wt,f_fs,sig_fs)
+    d_h_env = _normalize(sgn.resample_poly(h_env,f_fs,sig_fs))
+    d_env = _normalize(sgn.resample_poly(env,f_fs,sig_fs))
+    d_psd = _normalize(sgn.resample_poly(psd,f_fs,sig_fs))
+    d_wt = _normalize(sgn.resample_poly(wt,f_fs,sig_fs))
 
     return np.array(d_h_env),np.array(d_env),np.array(d_psd),np.array(d_wt)
 
@@ -346,7 +346,8 @@ def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,st
         lower_s2 = max(0,ceil(s2_ind-(ms2/2)))
         states[lower_s2:upper_s2] = 3
 
-        s1_labels = np.nonzero(states == 1)[0]
+        # s1_labels = np.nonzero(states == 1)[0]
+        s1_labels = as1
         diffs = s1_labels - s2
         diffs[diffs<0] = INF
         end_pos = 0
@@ -377,8 +378,8 @@ def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,st
 def _get_hr_sys(sig,sig_fs,preproc=(25,400),min_hr=30,max_hr=120):
     bpf = sgn.butter(4,preproc,"bandpass",output="sos",fs=sig_fs)
     f_sig = sgn.sosfiltfilt(bpf,sig)
-    # rem_sig = spike_removal(f_sig,sig_fs)
-    h_env = _h_envelope_feature(f_sig,sig_fs)
+    rem_sig = _spike_removal(f_sig,sig_fs)
+    h_env = _h_envelope_feature(rem_sig,sig_fs)
     y = h_env - np.mean(h_env)
     coef = sgn.correlate(y,y)
     coef = coef[len(h_env):]/np.max(coef)
@@ -397,22 +398,21 @@ def _get_hr_sys(sig,sig_fs,preproc=(25,400),min_hr=30,max_hr=120):
 
 def _get_duration_params(hr,sys,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22):
     mean_sys = round(sys*1000)
-    std_sys = 25
-    # mean_dia = round((60/hr)-sys)*1000-94
-    mean_dia = round(((60/hr)-sys)*1000)-130
-    # std_dia = round(0.07*mean_dia) + 6
-    std_dia = round(0.15*mean_dia)
+    std_sys = 25 #TODO: extract to model parameter
+    mean_dia = ((60/hr)-sys)*1000-mean_s2
+    std_dia = 0.07*mean_dia + 6 #TODO: extract to model parameter
+    # mean_dia = round(((60/hr)-sys)*1000)-130
+    # std_dia = round(0.15*mean_dia)
 
-    min_sys = mean_sys - 3*(std_sys+std_s1)
+    min_sys = mean_sys - 3*(std_sys+std_s1) #unused
     max_sys = mean_sys + 3*(std_sys+std_s1)
-    min_dia = mean_dia - 3*std_dia
+    min_dia = mean_dia - 3*std_dia #unused
     max_dia = mean_dia + 3*std_dia
-    min_s1 = mean_s1 - 3*std_s1
+    min_s1 = mean_s1 - 3*std_s1 #unused
     max_s1 = mean_s1 + 3*std_s1
-    min_s2 = mean_s2 - 3*std_s2
+    min_s2 = mean_s2 - 3*std_s2 #unused
     max_s2 = mean_s2 + 3*std_s2
 
-    # max_duration = (60/hr)*1000
     max_duration = max([max_s1+2*std_s1,max_s2+2*std_s2,max_sys+2*(std_sys+std_s1),max_dia+2*std_dia])
     # min_duration = min([min_s1-2*std_s1,min_s2-2*std_s2,min_sys-2*(std_sys-std_s1),min_dia-2*std_dia])
     return max_duration, mean_sys, std_sys, mean_dia, std_dia
