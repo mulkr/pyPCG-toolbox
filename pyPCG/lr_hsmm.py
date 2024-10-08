@@ -94,6 +94,22 @@ class LR_HSMM():
         self.lr_model = _LREmission(features.T, states)
         self.hsmm_model = HSMMModel(self.lr_model,durs,tmat)
 
+    def train_with_precalc_features(self,features:npt.NDArray[np.float64],train_data:npt.NDArray[np.float64],train_s1_annot:(npt.NDArray[np.float64]|npt.NDArray[np.int_]),train_s2_annot:npt.NDArray[np.float64]) -> None:
+        tmat = np.array([[0.,1.,0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.],[1.,0.,0.,0.]])
+        states = np.array([])
+        d_hr, d_sys = np.array([]),np.array([])
+        print("Precalc features")
+        for i,(data,s1_annot,s2_annot) in enumerate(zip(train_data,train_s1_annot,train_s2_annot)):
+            hr, sys = _get_hr_sys(data,self.signal_fs,self.bandpass_frq,self.expected_hr_range[0],self.expected_hr_range[1])
+            sts = _generate_states(data,s1_annot,s2_annot,self.signal_fs,self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
+            states = np.append(states,sts)
+            d_hr = np.append(d_hr,hr)
+            d_sys = np.append(d_sys,sys)
+        durs = _get_duration_distributions(np.mean(d_hr),np.mean(d_sys),self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
+        print("Training model...")
+        self.lr_model = _LREmission(features.T, states)
+        self.hsmm_model = HSMMModel(self.lr_model,durs,tmat)
+
     def segment_single(self,sig:npt.NDArray[np.float64]) -> tuple[npt.NDArray[np.float64],npt.NDArray[np.float64]]:
         """Predicts the states for the given PCG signal
 
