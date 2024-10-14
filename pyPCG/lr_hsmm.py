@@ -17,6 +17,7 @@ from hsmmlearn.emissions import AbstractEmissions
 from hsmmlearn.hsmm import HSMMModel
 from scipy.stats import norm
 from joblib import Parallel, delayed
+from scipy.stats import multivariate_normal
 
 INF = 999999999
 
@@ -200,22 +201,36 @@ class _LREmission(AbstractEmissions):
         sys_train[states != 2] = 1
         dia_train[states != 4] = 1
 
+        total = np.concatenate((features[states==1],features[states==2],features[states==3],features[states==4]))
+        self.mu = np.mean(total,axis=0)
+        self.sigma = np.cov(total.T)
+
         print("Training S1 LR...")
-        self.LRmodel_s1 = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,s1_train)
+        self.LRmodel_s1 = LogisticRegression(random_state=0,max_iter=100,class_weight="balanced",tol=1e-6).fit(features,s1_train)
         print("Training S2 LR...")
-        self.LRmodel_s2 = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,s2_train)
+        self.LRmodel_s2 = LogisticRegression(random_state=0,max_iter=100,class_weight="balanced",tol=1e-6).fit(features,s2_train)
         print("Training sys LR...")
-        self.LRmodel_sys = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,sys_train)
+        self.LRmodel_sys = LogisticRegression(random_state=0,max_iter=100,class_weight="balanced",tol=1e-6).fit(features,sys_train)
         print("Training dia LR...")
-        self.LRmodel_dia = LogisticRegression(random_state=0,max_iter=1000,class_weight="balanced").fit(features,dia_train)
+        self.LRmodel_dia = LogisticRegression(random_state=0,max_iter=100,class_weight="balanced",tol=1e-6).fit(features,dia_train)
+        # self.LRmodel_complete = LogisticRegression(random_state=0,max_iter=100,class_weight="balanced",multi_class="multinomial",tol=1e-6).fit(features,states)
         self.predictors = [self.LRmodel_s1,self.LRmodel_sys,self.LRmodel_s2,self.LRmodel_dia] #TODO: possible to replace with a single LR predictor
 
     def likelihood(self, obs):
-        l_s1 = self.LRmodel_s1.predict_proba(obs)[:,0]
-        l_s2 = self.LRmodel_s2.predict_proba(obs)[:,0]
-        l_sys = self.LRmodel_sys.predict_proba(obs)[:,0]
-        l_dia = self.LRmodel_dia.predict_proba(obs)[:,0]
-        return np.array([l_s1,l_sys,l_s2,l_dia])
+        # l_s1 = self.LRmodel_s1.predict_proba(obs)[:,0]
+        # l_s2 = self.LRmodel_s2.predict_proba(obs)[:,0]
+        # l_sys = self.LRmodel_sys.predict_proba(obs)[:,0]
+        # l_dia = self.LRmodel_dia.predict_proba(obs)[:,0]
+        # return np.array([l_s1,l_sys,l_s2,l_dia])
+        probs = np.empty((len(obs),len(self.predictors)))
+        for n,predictor in enumerate(self.predictors):
+            pi_hat = predictor.predict_proba(obs)[:,0]
+            # pi_hat = self.LRmodel_complete.predict_proba(obs)[:,n]
+            for t in range(len(obs)):
+                correction = multivariate_normal.pdf(obs[t,:],mean=self.mu,cov=self.sigma) #type:ignore
+                probs[t,n] = (pi_hat[t]*correction)/0.25
+        return probs.T
+        # return self.LRmodel_complete.predict_proba(obs).T
 
     def serialize(self):
         serialized_models = {"lr_s1":None, "lr_sys":None, "lr_s2":None, "lr_dia":None}
