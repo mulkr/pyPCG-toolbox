@@ -304,21 +304,21 @@ def _spike_removal(sig,sig_fs):
     MAAs = np.max(np.abs(frames),axis=0)
     if len(MAAs) == 0:
         return sig
-    while(np.count_nonzero(MAAs>np.median(MAAs)*3)>0):
-        # val = np.max(MAAs,axis=1)
-        framenum = np.argmax(MAAs,axis=0)
-        if type(framenum) != np.int64:
-            if len(framenum)>1:
-                framenum = framenum[1]
+    while(np.any(MAAs>np.median(MAAs,axis=0)*3)):
+        framenum = np.argmax(MAAs)
         pos = np.argmax(np.abs(frames[:,framenum]))
-        zerocross = np.where(np.abs(np.diff(np.sign(frames[:,framenum])))>0)[0]
-        find = (np.nonzero(zerocross)[0],np.nonzero(zerocross[0:pos])[0])
-        if len(find[0])>0 and len(find[1])>0 :
-            last = find[1][-1]
-            start = max(1,last)
-            zerocross[0:pos] = 0
-            end = min(find[0][0],window_s)
-            frames[start:end,framenum] = 0.0001
+
+        zerocrossings = np.append(np.abs(np.diff(np.sign(frames[:,framenum])))>1,0)
+        spike_start = 0
+        find = np.nonzero(zerocrossings[:pos])[0]
+        if len(find)>0:
+            spike_start = max(1,find[-1])
+        zerocrossings[:pos] = 0
+        find = np.nonzero(zerocrossings)[0]
+        spike_end = window_s+1
+        if len(find)>0:
+            spike_end = min(find[0],window_s)+1
+        frames[spike_start:spike_end,framenum] = 0.0001
         MAAs = np.max(np.abs(frames),axis=0)
     removed = np.reshape(frames,(-1,1))
     removed = np.append(removed,sig[len(removed):])
