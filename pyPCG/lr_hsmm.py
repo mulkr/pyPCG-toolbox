@@ -90,6 +90,7 @@ class LR_HSMM():
             d_hr = np.append(d_hr,hr)
             d_sys = np.append(d_sys,sys)
         features = np.array([f_henv,f_env,f_psd,f_wt])
+        # TODO: calculating duration distributions here is not in parity with Springer et al.
         durs = _get_duration_distributions(np.mean(d_hr),np.mean(d_sys),self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
         print("Training model...")
         self.lr_model = _LREmission(features.T, states)
@@ -106,6 +107,7 @@ class LR_HSMM():
             states = np.append(states,sts)
             d_hr = np.append(d_hr,hr)
             d_sys = np.append(d_sys,sys)
+        # TODO: calculating duration distributions here is not in parity with Springer et al.
         durs = _get_duration_distributions(np.mean(d_hr),np.mean(d_sys),self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
         print("Training model...")
         self.lr_model = _LREmission(features.T, states)
@@ -126,6 +128,12 @@ class LR_HSMM():
         if self.hsmm_model is None:
             warnings.warn("Attempting to segment with untrained model. Returning empty states...",RuntimeWarning)
             return np.empty(0), np.empty(0)
+        
+        # Recalculating duration distributions for only the record to be segmented
+        hr, sys = _get_hr_sys(sig,self.signal_fs,self.bandpass_frq,self.expected_hr_range[0],self.expected_hr_range[1])
+        durs = _get_duration_distributions(hr,sys,self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
+        self.hsmm_model.durations = durs
+        
         d_states = self.hsmm_model.decode(seg_features.T)
         e_states = _expand_states(d_states+1,self.feature_fs,self.signal_fs,len(sig))
         return e_states, seg_features
@@ -430,11 +438,16 @@ def _get_hr_sys(sig,sig_fs,preproc=(25,400),min_hr=30,max_hr=120):
     # systole = 0.1 # temporary hack
     return heartrate, systole
 
-def _get_duration_params(hr,sys,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22):
-    mean_sys = round(sys*1000)
-    std_sys = 25 #TODO: extract to model parameter
-    mean_dia = ((60/hr)-sys)*1000-mean_s2
-    std_dia = 0.07*mean_dia + 6 #TODO: extract to model parameter
+def _get_duration_params(hr,sys,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22,fs=50):
+    m_s1 = round(mean_s1/1000*fs)
+    s_s1 = round(std_s1/1000*fs)
+    m_s2 = round(mean_s2/1000*fs)
+    s_s2 = round(std_s2/1000*fs)
+    
+    mean_sys = round(sys*fs) - m_s1
+    std_sys = (25/1000)*fs #TODO: extract to model parameter
+    mean_dia = ((60/hr)-sys-mean_s2/1000)*fs
+    std_dia = 0.07*mean_dia + (6/1000)*fs #TODO: extract to model parameter
     # mean_dia = round(((60/hr)-sys)*1000)-130
     # std_dia = round(0.15*mean_dia)
 
@@ -442,32 +455,29 @@ def _get_duration_params(hr,sys,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22):
     max_sys = mean_sys + 3*(std_sys+std_s1)
     min_dia = mean_dia - 3*std_dia #unused
     max_dia = mean_dia + 3*std_dia
-    min_s1 = mean_s1 - 3*std_s1 #unused
-    max_s1 = mean_s1 + 3*std_s1
-    min_s2 = mean_s2 - 3*std_s2 #unused
-    max_s2 = mean_s2 + 3*std_s2
+    min_s1 = m_s1 - 3*s_s1 #unused
+    max_s1 = m_s1 + 3*s_s1
+    min_s2 = m_s2 - 3*s_s2 #unused
+    max_s2 = m_s2 + 3*s_s2
 
     max_duration = max([max_s1+2*std_s1,max_s2+2*std_s2,max_sys+2*(std_sys+std_s1),max_dia+2*std_dia])
     # min_duration = min([min_s1-2*std_s1,min_s2-2*std_s2,min_sys-2*(std_sys-std_s1),min_dia-2*std_dia])
     return max_duration, mean_sys, std_sys, mean_dia, std_dia
 
 def _get_duration_distributions(hr,sys,f_fs,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22):
-    max_duration, mean_sys, std_sys, mean_dia, std_dia = _get_duration_params(hr,sys,mean_s1,mean_s2,std_s1,std_s2)
-    # fs_scale = round(sig_fs/f_fs)
-    time_scale = f_fs/1000
-    max_duration = round(max_duration*time_scale)
+    max_duration, mean_sys, std_sys, mean_dia, std_dia = _get_duration_params(hr,sys,mean_s1,mean_s2,std_s1,std_s2,f_fs)
+    m_s1 = round(mean_s1/1000*f_fs)
+    s_s1 = round(std_s1/1000*f_fs)
+    m_s2 = round(mean_s2/1000*f_fs)
+    s_s2 = round(std_s2/1000*f_fs)
+    max_duration = round(max_duration)
     s1_dur, s2_dur, sys_dur, dia_dur = np.zeros((max_duration)),np.zeros((max_duration)),np.zeros((max_duration)),np.zeros((max_duration))
-    for i in range(max_duration):
-        s1_dur[i] = norm.pdf(i,loc=mean_s1*time_scale,scale=std_s1*time_scale)
-        s2_dur[i] = norm.pdf(i,loc=mean_s2*time_scale,scale=std_s2*time_scale)
-        sys_dur[i] = norm.pdf(i,loc=mean_sys*time_scale,scale=std_sys*time_scale)
-        dia_dur[i] = norm.pdf(i,loc=mean_dia*time_scale,scale=std_dia*time_scale)
+    for i in range(1,max_duration+1):
+        s1_dur[i-1] = norm.pdf(i,loc=m_s1,scale=s_s1)
+        s2_dur[i-1] = norm.pdf(i,loc=m_s2,scale=s_s2)
+        sys_dur[i-1] = norm.pdf(i,loc=mean_sys,scale=std_sys)
+        dia_dur[i-1] = norm.pdf(i,loc=mean_dia,scale=std_dia)
     return np.array([s1_dur,sys_dur,s2_dur,dia_dur])
-
-def _diff(sig):
-    sub = np.insert(sig,0,0)
-    sig = sig-sub[:-1]
-    return sig[1:]
 
 def _expand_states(states,orig_fs,new_fs,new_len):
     expanded = np.zeros(new_len)
