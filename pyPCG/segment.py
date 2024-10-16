@@ -48,6 +48,16 @@ def peak_sort_diff(peak_locs: npt.NDArray[np.int_]) -> tuple[npt.NDArray[np.int_
     s2_loc = peak_locs[interval_diff<0]
     return s1_loc, s2_loc
 
+def peak_sort_centroid(peak_locs: npt.NDArray[np.int_],raw: pcg_signal,envelope: pcg_signal) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.int_]]:
+    from pyPCG.features import spectral_centroid
+    starts, ends = segment_peaks(peak_locs,envelope,0.8,0.8)
+    freqs, _= spectral_centroid(starts,ends,raw)
+    mfreq = np.mean(freqs)
+    
+    s1_loc = (starts[freqs<mfreq]+ends[freqs<mfreq])//2
+    s2_loc = (starts[freqs>mfreq]+ends[freqs>mfreq])//2
+    return s1_loc, s2_loc
+
 def segment_peaks(peak_locs: npt.NDArray[np.int_], envelope_signal: pcg_signal ,start_drop:float=0.6, end_drop:float=0.6) -> tuple[npt.NDArray[np.int_],npt.NDArray[np.int_]]:
     """Create start and end locations from the detected peaks based on the provided envelope.
     
