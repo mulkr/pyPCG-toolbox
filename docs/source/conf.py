@@ -1,7 +1,9 @@
+from pyPCG import __version__
+
 project = 'pyPCG'
 copyright = '2024, Kristóf Müller'
 author = 'Kristóf Müller'
-release = '0.1b2'
+release = __version__
 
 extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon','sphinx.ext.viewcode','sphinx_toolbox.more_autodoc.autotypeddict','enum_tools.autoenum']
 templates_path = ['_templates']
