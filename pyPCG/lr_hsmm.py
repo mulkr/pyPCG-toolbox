@@ -90,7 +90,7 @@ class LR_HSMM():
             d_hr = np.append(d_hr,hr)
             d_sys = np.append(d_sys,sys)
         features = np.array([f_henv,f_env,f_psd,f_wt])
-        # TODO: calculating duration distributions here is not in parity with Springer et al.
+        # Calculating duration distributions here is not in parity with Springer et al.
         durs = _get_duration_distributions(np.mean(d_hr),np.mean(d_sys),self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
         print("Training model...")
         self.lr_model = _LREmission(features.T, states)
@@ -100,20 +100,19 @@ class LR_HSMM():
         tmat = np.array([[0.,1.,0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.],[1.,0.,0.,0.]])
         states = np.array([])
         d_hr, d_sys = np.array([]),np.array([])
-        print("Precalc features")
         for i,(data,s1_annot,s2_annot) in enumerate(zip(train_data,train_s1_annot,train_s2_annot)):
             hr, sys = _get_hr_sys(data,self.signal_fs,self.bandpass_frq,self.expected_hr_range[0],self.expected_hr_range[1])
             sts = _generate_states(data,s1_annot,s2_annot,self.signal_fs,self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
             states = np.append(states,sts)
             d_hr = np.append(d_hr,hr)
             d_sys = np.append(d_sys,sys)
-        # TODO: calculating duration distributions here is not in parity with Springer et al.
+        # Calculating duration distributions here is not in parity with Springer et al.
         durs = _get_duration_distributions(np.mean(d_hr),np.mean(d_sys),self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
         print("Training model...")
         self.lr_model = _LREmission(features.T, states)
         self.hsmm_model = HSMMModel(self.lr_model,durs,tmat)
 
-    def segment_single(self,sig:npt.NDArray[np.float64]) -> tuple[npt.NDArray[np.float64],npt.NDArray[np.float64]]:
+    def segment_single(self,sig:npt.NDArray[np.float64],recalc_timing:bool=False) -> tuple[npt.NDArray[np.float64],npt.NDArray[np.float64]]:
         """Predicts the states for the given PCG signal
 
         Args:
@@ -128,11 +127,11 @@ class LR_HSMM():
         if self.hsmm_model is None:
             warnings.warn("Attempting to segment with untrained model. Returning empty states...",RuntimeWarning)
             return np.empty(0), np.empty(0)
-        
-        # Recalculating duration distributions for only the record to be segmented
-        hr, sys = _get_hr_sys(sig,self.signal_fs,self.bandpass_frq,self.expected_hr_range[0],self.expected_hr_range[1])
-        durs = _get_duration_distributions(hr,sys,self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
-        self.hsmm_model.durations = durs
+        if recalc_timing:
+            # Recalculating duration distributions for only the record to be segmented
+            hr, sys = _get_hr_sys(sig,self.signal_fs,self.bandpass_frq,self.expected_hr_range[0],self.expected_hr_range[1])
+            durs = _get_duration_distributions(hr,sys,self.feature_fs,self.mean_s1_len,self.mean_s2_len,self.std_s1_len,self.std_s2_len)
+            self.hsmm_model.durations = durs
         
         d_states = self.hsmm_model.decode(seg_features.T)
         e_states = _expand_states(d_states+1,self.feature_fs,self.signal_fs,len(sig))

@@ -102,7 +102,7 @@ def load_hsmm(path:str) -> lr_hsmm.LR_HSMM:
     model.load_model(path)
     return model
 
-def segment_hsmm(model:lr_hsmm.LR_HSMM,signal:pcg_signal) -> npt.NDArray[np.float64]:
+def segment_hsmm(model:lr_hsmm.LR_HSMM,signal:pcg_signal,recalc:bool=False) -> npt.NDArray[np.float64]:
     """Use a trained LR-HSMM model to segment a pcg signal
 
     Args:
@@ -117,7 +117,7 @@ def segment_hsmm(model:lr_hsmm.LR_HSMM,signal:pcg_signal) -> npt.NDArray[np.floa
     """
     if(model.signal_fs!=signal.fs):
         raise ValueError(f"Unexpected signal samplerate {signal.fs}, LR-HSMM expects {model.signal_fs}")
-    states, _ = model.segment_single(signal.data)
+    states, _ = model.segment_single(signal.data,recalc_timing=recalc)
     return states
 
 class heart_state(Enum):
