@@ -53,7 +53,7 @@ def read_signal_file(path: str, format: str) -> tuple[npt.NDArray[np.int_],int]:
                 signal = np.append(signal,data[25+i*BLOCK_SIZE:1024+i*BLOCK_SIZE])
             if block_count*BLOCK_SIZE+24 < len(data):
                 signal = np.append(signal,data[25+block_count*BLOCK_SIZE:])
-        elif format == '2nd':
+        elif format == 'FETA':
             
             def _get_byte_offset_start(b_sig):
                 test = b_sig[:16]
