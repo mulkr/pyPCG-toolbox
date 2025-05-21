@@ -4,8 +4,9 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.10"
-  post_create_environment:
-    - bash export READTHEDOCS="True"
+  jobs:
+    post_create_environment:
+      - bash export READTHEDOCS="True"
 
 sphinx:
   configuration: docs/source/conf.py
