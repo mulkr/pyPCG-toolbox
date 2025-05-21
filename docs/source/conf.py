@@ -34,4 +34,7 @@ if os.getenv('READTHEDOCS', None) == 'True':
         @classmethod
         def __getattr__(cls, name):
             return MagicMock()
+    sys.modules['hsmmlearn'] = Mock()
     sys.modules['hsmmlearn.base'] = Mock()
+    sys.modules['hsmmlearn.emissions'] = Mock()
+    sys.modules['hsmmlearn.hsmm'] = Mock()
