@@ -13,7 +13,11 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 html_context = {
-    "display_github": True
+    "display_github": True,
+    "github_user": "mulkr",
+    "github_repo": "pyPCG-toolbox",
+    "github_version": "main",
+    "conf_py_path": "/docs/source/"
 }
 
 html_theme_options = {

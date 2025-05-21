@@ -16,7 +16,7 @@ For validating the installation, check the version of the toolbox:
 
     >>> import pyPCG
     >>> print(pyPCG.__version__)
-    '0.1-a'
+    '0.1b4'
 
 Example
 -------
