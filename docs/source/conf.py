@@ -26,14 +26,12 @@ html_theme_options = {
 }
 
 import os
-if os.environ.get('READTHEDOCS', None) == 'True':
+if os.getenv('READTHEDOCS', None) == 'True':
+    print("On RTD docs: use Mock hsmmlearn.base")
     import sys
     from unittest.mock import MagicMock
     class Mock(MagicMock):
         @classmethod
         def __getattr__(cls, name):
             return MagicMock()
-
-    MOCK_MODULES = ['hsmmlearn.base']
-    for mod_name in MOCK_MODULES:
-        sys.modules[mod_name] = Mock()
+    sys.modules['hsmmlearn.base'] = Mock()
