@@ -1,4 +1,4 @@
-Baiscs
+Basics
 ======
 Main signal object
 ------------------
