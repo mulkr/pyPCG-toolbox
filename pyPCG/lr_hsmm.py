@@ -243,10 +243,15 @@ class _LREmission(AbstractEmissions):
                     attr_dict[k] = attr_dict[k].tolist()
             serialized_lr = {"params":params,"attrs":attr_dict}
             serialized_models[lr_type] = serialized_lr #type: ignore
-        return serialized_models
+        extra_params = {"mu":self.mu, "sigma":self.sigma}
+        serialized = serialized_models | extra_params
+        return serialized
     
     def unserialize(self,serial):
-        for loaded,lr in zip(serial.keys(),self.predictors):
+        saved_predictors = list(serial.keys())
+        saved_predictors.remove("mu")
+        saved_predictors.remove("sigma")
+        for loaded,lr in zip(saved_predictors,self.predictors):
             params = serial[loaded]["params"]
             attrs = serial[loaded]["attrs"]
             lr.set_params(**params)
@@ -255,6 +260,8 @@ class _LREmission(AbstractEmissions):
                     setattr(lr,k,np.array(attrs[k]))
                 else:
                     setattr(lr,k,attrs[k])
+        self.mu = serial["mu"]
+        self.sigma = serial["sigma"]
 
 def _envelope_feature(sig):
     env = abs(sgn.hilbert(sig)) #type: ignore
