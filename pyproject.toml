@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyPCG_toolbox"
-version = "0.1b4"
+version = "0.1b5"
 authors = [
   { name="Kristóf Müller"},
   { name="Janka Hatvani"},
