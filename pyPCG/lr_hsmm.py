@@ -243,7 +243,7 @@ class _LREmission(AbstractEmissions):
                     attr_dict[k] = attr_dict[k].tolist()
             serialized_lr = {"params":params,"attrs":attr_dict}
             serialized_models[lr_type] = serialized_lr #type: ignore
-        extra_params = {"mu":self.mu, "sigma":self.sigma}
+        extra_params = {"mu":self.mu.tolist(), "sigma":self.sigma.tolist()}
         serialized = serialized_models | extra_params
         return serialized
     
