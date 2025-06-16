@@ -39,5 +39,5 @@ packages = ["pyPCG"]
 [tool.setuptools.package-data]
 data = ["*.wav","*.json","*.mat"]
 
-[tools.setuptools.dynamic]
+[tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}

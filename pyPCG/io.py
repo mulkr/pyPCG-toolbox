@@ -93,8 +93,8 @@ def read_signal_file(path: str, format: str) -> tuple[npt.NDArray[np.int_],int]:
             fs, signal = sio.wavfile.read(path)
         elif format == 'mat':
             mat = sio.loadmat(path)
-            fs = mat["fs"][0,0]
-            signal = np.squeeze(mat["sig"])
+            fs = mat["fs"][0,0] #type: ignore
+            signal = np.squeeze(mat["sig"]) #type: ignore
         else:
             raise ValueError('Format not recognized')
     return np.array(signal), fs

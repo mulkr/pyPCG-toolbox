@@ -15,7 +15,7 @@ def trim_transform(data: npt.NDArray[np.float64], trim_precent: float) -> npt.ND
     Returns:
         np.ndarray: trimmed values
     """
-    return sts.trimboth(data,trim_precent/100)
+    return sts.trimboth(data,trim_precent/100) #type: ignore
 
 def outlier_remove_transform(data: npt.NDArray[np.float64], dist: float=3.0) -> npt.NDArray[np.float64]:
     """Remove outliers based on the MAD (median of absolute differences)

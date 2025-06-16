@@ -68,7 +68,7 @@ class LR_HSMM():
         print("Generating features...")
         if multiprocess is not None:
             result = Parallel(n_jobs=multiprocess,backend="multiprocessing")(delayed(_generate_features)(data,self.signal_fs,self.feature_fs,self.bandpass_frq) for data in train_data) #type: ignore
-            henv, env, psd, wt = zip(*result)
+            henv, env, psd, wt = zip(*result) #type: ignore
             for f in henv:
                 f_henv = np.append(f_henv,f)
             for f in env:
@@ -224,20 +224,13 @@ class _LREmission(AbstractEmissions):
         self.predictors = [self.LRmodel_s1,self.LRmodel_sys,self.LRmodel_s2,self.LRmodel_dia] #TODO: possible to replace with a single LR predictor
 
     def likelihood(self, obs):
-        # l_s1 = self.LRmodel_s1.predict_proba(obs)[:,0]
-        # l_s2 = self.LRmodel_s2.predict_proba(obs)[:,0]
-        # l_sys = self.LRmodel_sys.predict_proba(obs)[:,0]
-        # l_dia = self.LRmodel_dia.predict_proba(obs)[:,0]
-        # return np.array([l_s1,l_sys,l_s2,l_dia])
         probs = np.empty((len(obs),len(self.predictors)))
         for n,predictor in enumerate(self.predictors):
             pi_hat = predictor.predict_proba(obs)[:,0]
-            # pi_hat = self.LRmodel_complete.predict_proba(obs)[:,n]
             for t in range(len(obs)):
                 correction = multivariate_normal.pdf(obs[t,:],mean=self.mu,cov=self.sigma) #type:ignore
                 probs[t,n] = (pi_hat[t]*correction)/0.25
         return probs.T
-        # return self.LRmodel_complete.predict_proba(obs).T
 
     def serialize(self):
         serialized_models = {"lr_s1":None, "lr_sys":None, "lr_s2":None, "lr_dia":None}
@@ -345,7 +338,6 @@ def _generate_features(sig,sig_fs,f_fs,preproc=(25,400)):
     d_env = _normalize(sgn.resample_poly(env,f_fs,sig_fs))
     d_psd = _normalize(sgn.resample_poly(psd,f_fs,sig_fs))
     d_wt = _normalize(sgn.resample_poly(wt,f_fs,sig_fs))
-    # d_wt = np.roll(d_wt,3) #temp hack
 
     return np.array(d_h_env),np.array(d_env),np.array(d_psd),np.array(d_wt)
 
@@ -353,10 +345,8 @@ def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,st
     henv = _h_envelope_feature(sig,sig_fs)
     env = sgn.resample_poly(henv,f_fs,sig_fs)
     states = np.zeros_like(env)
-    ms_scale = sig_fs/1000
-    fs_scale = sig_fs/f_fs
     scale = f_fs/1000
-    as1 = np.round(np.array(annot_s1)*f_fs).astype(int) # *ms_scale/fs_scale
+    as1 = np.round(np.array(annot_s1)*f_fs).astype(int)
     as2 = np.round(np.array(annot_s2)*f_fs).astype(int)
     ms1 = round(mean_s1*scale)
     ms2 = round(mean_s2*scale)
@@ -387,7 +377,6 @@ def _generate_states(sig,annot_s1,annot_s2,sig_fs,f_fs,mean_s1=122,mean_s2=99,st
         lower_s2 = max(0,ceil(s2_ind-(ms2/2)))
         states[lower_s2:upper_s2] = 3
 
-        # s1_labels = np.nonzero(states == 1)[0]
         s1_labels = as1
         diffs = s1_labels - s2
         diffs[diffs<0] = INF
@@ -433,8 +422,6 @@ def _get_hr_sys(sig,sig_fs,preproc=(25,400),min_hr=30,max_hr=120):
     min_sys = round(0.2*sig_fs)
     ind = np.argmax(coef[min_sys:max_sys]) + min_sys
     systole = ind/sig_fs
-    # print(systole)
-    # systole = 0.1 # temporary hack
     return heartrate, systole
 
 def _get_duration_params(hr,sys,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22,fs=50):
@@ -447,20 +434,18 @@ def _get_duration_params(hr,sys,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22,fs=50
     std_sys = (25/1000)*fs #TODO: extract to model parameter
     mean_dia = ((60/hr)-sys-mean_s2/1000)*fs
     std_dia = 0.07*mean_dia + (6/1000)*fs #TODO: extract to model parameter
-    # mean_dia = round(((60/hr)-sys)*1000)-130
-    # std_dia = round(0.15*mean_dia)
 
-    min_sys = mean_sys - 3*(std_sys+std_s1) #unused
+    # min_sys = mean_sys - 3*(std_sys+std_s1) #unused
     max_sys = mean_sys + 3*(std_sys+std_s1)
-    min_dia = mean_dia - 3*std_dia #unused
+    # min_dia = mean_dia - 3*std_dia #unused
     max_dia = mean_dia + 3*std_dia
-    min_s1 = m_s1 - 3*s_s1 #unused
+    # min_s1 = m_s1 - 3*s_s1 #unused
     max_s1 = m_s1 + 3*s_s1
-    min_s2 = m_s2 - 3*s_s2 #unused
+    # min_s2 = m_s2 - 3*s_s2 #unused
     max_s2 = m_s2 + 3*s_s2
 
     max_duration = max([max_s1+2*std_s1,max_s2+2*std_s2,max_sys+2*(std_sys+std_s1),max_dia+2*std_dia])
-    # min_duration = min([min_s1-2*std_s1,min_s2-2*std_s2,min_sys-2*(std_sys-std_s1),min_dia-2*std_dia])
+    # min_duration = min([min_s1-2*std_s1,min_s2-2*std_s2,min_sys-2*(std_sys-std_s1),min_dia-2*std_dia]) #unused
     return max_duration, mean_sys, std_sys, mean_dia, std_dia
 
 def _get_duration_distributions(hr,sys,f_fs,mean_s1=122,mean_s2=99,std_s1=22,std_s2=22):
