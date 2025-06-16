@@ -52,7 +52,7 @@ class LR_HSMM():
         self.hsmm_model = None
         self.lr_model = _LREmission()
 
-    def train_model(self,train_data:npt.NDArray[np.float64],train_s1_annot:(npt.NDArray[np.float64]|npt.NDArray[np.int_]),train_s2_annot:npt.NDArray[np.float64],multiprocess:int|None=None) -> None:
+    def train_model(self,train_data:npt.NDArray[np.float64]|list[float],train_s1_annot:npt.NDArray[np.float64]|list[float],train_s2_annot:npt.NDArray[np.float64]|list[float],multiprocess:int|None=None) -> None:
         """Trains the model on the specified data with S1 and S2 location annotations 
 
         Args:
@@ -96,7 +96,7 @@ class LR_HSMM():
         self.lr_model = _LREmission(features.T, states)
         self.hsmm_model = HSMMModel(self.lr_model,durs,tmat)
 
-    def train_with_precalc_features(self,features:npt.NDArray[np.float64],train_data:npt.NDArray[np.float64],train_s1_annot:(npt.NDArray[np.float64]|npt.NDArray[np.int_]),train_s2_annot:npt.NDArray[np.float64]) -> None:
+    def train_with_precalc_features(self,features:npt.NDArray[np.float64],train_data:npt.NDArray[np.float64]|list[float],train_s1_annot:npt.NDArray[np.float64]|list[float],train_s2_annot:npt.NDArray[np.float64]|list[float]) -> None:
         tmat = np.array([[0.,1.,0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.],[1.,0.,0.,0.]])
         states = np.array([])
         d_hr, d_sys = np.array([]),np.array([])
